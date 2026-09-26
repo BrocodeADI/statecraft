@@ -44,8 +44,8 @@ class AttackerObservation(BaseModel):
 class ObservationEngine:
     """Projects ground truth through an actor's discovered knowledge (Fog of War)."""
 
+    @staticmethod
     def attacker_view(
-        self,
         ground_truth: EnvironmentState,
         spec: EnvironmentSpec,
         actor_id: str = "actor_attacker",

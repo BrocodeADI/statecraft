@@ -128,8 +128,79 @@ statecraft replay runs/university.scr
 ## 11. Current Limitations & Future Scope (30 Seconds)
 **Presenter Speaking Points:**
 > "To maintain rigorous engineering focus for Day-1, several features are intentionally deferred:
-> - Automated LLM scenario compilation and dynamic LLM attackers.
-> - Defender automated responses (e.g. host isolation upon detection).
+> - Automated LLM scenario compilation and autonomous multi-agent loops.
+> - Defender automated responses (e.g. dynamic host isolation).
 > - Web-based topology visualization.
 >
 > The core simulation engine, validation pipeline, effect system, and deterministic replay engine are 100% verified, tested, and operational today."
+
+---
+
+## 12. Unified Demonstration Command (`statecraft demo`)
+
+For live evaluators, the entire demonstration sequence above is orchestrated via a single command:
+
+```bash
+statecraft demo
+```
+
+This single command automatically executes:
+1. Environment loading and topology inspection
+2. 6-stage static validation
+3. Authoritative simulation of the 7-step reference attack
+4. Run export to `runs/university.scr`
+5. Bit-for-bit replay verification against original state
+6. Architecture guarantee and summary stats
+
+---
+
+## 13. AI-Assisted Mode (`statecraft ai`)
+
+Statecraft provides an optional natural language action proposer interface that demonstrates how AI agents interact with the authoritative engine:
+
+```text
+User Natural Language
+         |
+         v
+AI Action Proposer (RuleBasedNLP / Model)
+         |
+         v
+ProposedAction (Unprivileged)
+         |
+         v
+Statecraft Engine (Authoritative Execution)
+         |
+         v
+ActionResult (Ground Truth)
+         |
+         v
+Human-Readable Response
+```
+
+### Demonstration Commands
+
+1. **Valid Action Proposal:**
+   ```bash
+   statecraft ai --prompt "Find an entry point into the university network."
+   ```
+   *Result:* AI translates prompt into `ProposedAction(verb=scan, target=net.dmz)`. The engine validates network topology and executes the scan, discovering `WEB01 [10.0.1.10]`.
+
+2. **Rejected Action Proposal (Engine Authority Enforcement):**
+   ```bash
+   statecraft ai --prompt "Access student PII"
+   ```
+   *Result:* AI proposes `ProposedAction(verb=access_data, target=asset.student_pii)`. The engine checks prerequisites, identifies that no active session exists on `host.db01`, and **strictly rejects** the action with `No active session on target host`. authoritatively preventing state mutation.
+
+3. **Interactive Mode:**
+   ```bash
+   statecraft ai
+   ```
+   *Result:* Launches an interactive session allowing continuous command exploration.
+
+### Safety Guarantee
+The AI is strictly an **Action Proposer**, NOT the simulation referee:
+- The AI cannot directly edit `EnvironmentState` or create sessions.
+- The AI cannot mark objectives achieved or bypass firewalls.
+- The AI cannot execute arbitrary code or shell commands.
+- If the AI proposes an invalid action, the engine rejects it and the state remains unchanged.
+

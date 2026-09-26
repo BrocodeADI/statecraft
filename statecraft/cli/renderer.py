@@ -81,3 +81,60 @@ def render_run_summary(ticks: int, objectives_achieved: int, total_objectives: i
         summary_text += f"\n[dim]Saved run package to:[/dim] [cyan]{output_path}[/cyan]"
 
     console.print(Panel(summary_text, title="[bold green]== RUN COMPLETE ==[/bold green]", border_style="green"))
+
+
+def render_demo_header():
+    """Renders the top banner for the live PBL demo."""
+    console.print("=" * 60, style="bold cyan")
+    console.print("[bold white]STATECRAFT[/bold white]")
+    console.print("[cyan]Deterministic Cyber Simulation Engine[/cyan]")
+    console.print("[dim]Authoritative Physics | Zero Hallucination | Bit-for-Bit Replay[/dim]")
+    console.print("=" * 60, style="bold cyan")
+
+
+def render_demo_step_header(step_num: int, total_steps: int, title: str):
+    """Renders phase section header."""
+    console.print(f"\n[bold yellow][{step_num}/{total_steps}] {title}[/bold yellow]")
+
+
+def render_demo_architecture():
+    """Renders concise architectural guarantee."""
+    console.print("-" * 60, style="dim cyan")
+    console.print("[bold white]ARCHITECTURE GUARANTEE[/bold white]", style="cyan")
+    console.print("-" * 60, style="dim cyan")
+    arch_diagram = """    User / AI Proposer
+        |
+        | ProposedAction (Unprivileged)
+        v
+    Statecraft Engine (Authoritative)
+        |
+        +-- Static Validation (6-stage)
+        +-- Firewall & Routing Topology
+        +-- Immutable State Store (StateStore)
+        +-- Closed Vocabulary Effects (12 primitives)
+        |
+        v
+    Telemetry & Detection (WAF/IDS/EDR)
+        |
+        v
+    Append-Only Event Log -> Deterministic Replay (.scr)
+
+    [bold green]"The AI or user proposes an action.[/bold green]
+    [bold green] The deterministic engine decides what actually happens."[/bold green]"""
+    console.print(arch_diagram)
+    console.print("-" * 60, style="dim cyan")
+
+
+def render_demo_complete(ticks: int, objectives_achieved: int, total_objectives: int, detection_count: int, events_replayed: int):
+    """Renders demo completion panel."""
+    console.print("\n" + "=" * 60, style="bold green")
+    console.print("[bold green]STATECRAFT DEMO COMPLETE[/bold green]")
+    console.print(
+        f"  [bold white]Ticks:[/bold white] {ticks}  |  "
+        f"[bold white]Objectives:[/bold white] {objectives_achieved}/{total_objectives}  |  "
+        f"[bold white]Detections:[/bold white] {detection_count}  |  "
+        f"[bold white]Replay Events:[/bold white] {events_replayed}"
+    )
+    console.print("  [bold green][*] All systems fully verified & authoritative.[/bold green]")
+    console.print("=" * 60, style="bold green")
+

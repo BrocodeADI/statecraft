@@ -77,3 +77,9 @@ Replay
 ### 9. Replay (`statecraft/replay/`)
 - **Deterministic Replayer (`Replayer`):** Reads `.scr` run archives, initializes a clean simulation state from the embedded specification, and re-executes recorded action sequences.
 - Verifies deterministic reproducibility by performing field-by-field verification of final state, objectives, active sessions, and event sequences.
+
+### 10. Presentation & AI Action Proposer Layer (`statecraft/cli/`, `statecraft/ai/`)
+- **`statecraft demo`:** Unified demonstration runner executing the complete vertical slice (load -> validate -> simulate -> persist -> replay -> verify) against real engine components with zero precomputed output.
+- **AI Action Proposer (`BaseAIProvider`, `AIEngineSession`):** Optional natural language interaction layer converting operator intents into unprivileged `ProposedAction` objects.
+- **Engine Authority Boundary:** The AI layer possesses **zero authority** to directly mutate state, create sessions, or achieve objectives. All proposed actions must pass through `ActionExecutor` validation; invalid proposals are rejected and leave simulation state completely unchanged.
+
