@@ -1,4 +1,4 @@
-# STATECRAFT — Authoritative Cyber Environment Compiler + Deterministic Action Engine
+# STATECRAFT — Authoritative Cyber Simulation Engine
 
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Completed%20MVP-success?style=for-the-badge&logo=shield" alt="Status: Completed MVP" />
@@ -6,10 +6,9 @@
   <img src="https://img.shields.io/badge/Simulation-Deterministic-purple?style=for-the-badge&logo=clock" alt="Deterministic Simulation" />
   <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11+" />
   <img src="https://img.shields.io/badge/Tests-86%20Passing-brightgreen?style=for-the-badge&logo=pytest" alt="86 Passing Tests" />
-  <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License: MIT" />
 </p>
 
-> **"Describe a network in declarative YAML. Compile a verifiable world. Simulate cyber actions with bit-for-bit mathematical determinism, strict fog-of-war constraints, and zero AI hallucination of state."**
+> **Describe a network in declarative YAML, validate it, and run cyber actions through an authoritative simulation engine with fog-of-war observations and replayable runs.**
 
 ---
 
@@ -17,12 +16,16 @@
 
 **Statecraft** is an authoritative cyber environment compiler and deterministic simulation engine. Modern cybersecurity training, autonomous agent benchmarking, and red/blue-team experimentation suffer from a fundamental flaw: environments are either fragile, slow, non-deterministic physical virtual machines, or they rely on probabilistic LLM simulations prone to state drift, hallucinations, and unverified transitions.
 
+![Statecraft visualizer at tick 3: the live demo shows the SQL-injection exploit, the WAF alert, and resulting telemetry.](docs/images/visualizer-tick-3-waf.png)
+
+*Live visualizer, tick 3 — the scripted SQL-injection action is accepted by the engine, the WAF detection is shown in the telemetry stream, and the attacker has obtained the application credential.*
+
 Statecraft resolves this paradigm by separating **intent proposal** from **state transition authority**:
 
 1. **Compilation & Static Validation:** Declarative scenario manifests (`EnvironmentSpec`) are compiled through a rigorous 7-stage static analysis pipeline before any simulation state can be initialized.
-2. **Authoritative Deterministic Execution:** The simulation kernel operates as a closed transition system. For any initial `(EnvironmentSpec, seed, action_sequence)` tuple, the resulting final state, session matrix, and causal event log are **100% bit-for-bit reproducible**.
-3. **Strict Fog-of-War & Asymmetric Visibility:** External agents (human operators, automated scripts, or LLM planners) possess zero direct access to the ground truth. Observations are dynamically filtered to what the actor has actively scanned, discovered, or compromised.
-4. **Append-Only Causal Event Ledger & Replay:** Every state delta emits immutable events recorded in a causal sequence. Complete runs export to portable `.scr` bundles that re-execute identically across systems.
+2. **Authoritative Deterministic Execution:** Given the same loaded spec, seed, and action sequence, the engine follows the same seeded transition path. The test suite exercises repeat-run determinism for the reference scenario.
+3. **Fog-of-War & Asymmetric Visibility:** The attacker-facing observation model filters known hosts, services, credentials, and assets to information discovered through simulated actions.
+4. **Causal Event Ledger & Replay:** Runs export to portable `.scr` bundles containing the spec, actions, events, and recorded final state. Replay reconstructs the run and checks the recorded tick, objectives, active-session count, and event count.
 5. **Zero-Trust AI Action Proposer Boundary:** LLMs act strictly as unprivileged natural-language parsers or action proposers. The engine validates every proposed action against formal preconditions; invalid actions are rejected with zero state mutation.
 
 ---
@@ -31,8 +34,8 @@ Statecraft resolves this paradigm by separating **intent proposal** from **state
 
 | Guarantee | Mechanism | Invariant Enforced |
 | :--- | :--- | :--- |
-| **Engine Authority** | `ActionExecutor` & `StateStore` | Actors (human, script, or AI) can *only* submit `ProposedAction` objects. Direct mutation of `EnvironmentState` is syntactically and architecturally impossible. |
-| **Bit-for-Bit Determinism** | `SeededRNG` & Closed Transitions | Identical `(spec, seed, actions)` sequence produces exact identical states, active sessions, and event sequence hashes across arbitrary execution runs. |
+| **Engine Authority** | `ActionExecutor` & `StateStore` | The supported actor, script, and AI entry points submit `ProposedAction` objects; `ActionExecutor` validates them before applying a `StateDelta`. |
+| **Deterministic Reference Runs** | `SeededRNG` & Closed Transitions | Tests run the reference action sequence twice with the same spec and seed and compare the resulting tick, objectives, event count, and event type/target/success fields. |
 | **Fog-of-War Observability** | `ObservationEngine` & `AttackerObservation` | The ground truth topology is masked. Attackers only observe discovered hosts, enumerated services, harvested credentials, and compromised subnets. |
 | **Immutability of History** | Snapshot-based `StateStore` | Every state transition creates a new immutable versioned snapshot. Past ticks remain inspectable without side-effects (`state_at(tick)`). |
 | **Closed Action & Effect Algebra** | 8 Actions & 12 Effect Primitives | All security operations map strictly to an 8-verb grammar, executed exclusively via 12 closed, atomic effect primitives. |
@@ -100,13 +103,13 @@ flowchart LR
 6. **Stage 6: Cycle & Trust Boundary Detection (`cycle_check.py`)**  
    Detects illegitimate circular trust loops and invalid domain trust chains across enterprise boundaries.
 7. **Stage 7: Solvability Probe (`solvability.py`)**  
-   Validates graph topological paths from initial footholds to all declared scenario objectives, ensuring scenarios are mathematically solvable.
+   Checks declared objective paths from the configured foothold and reports solvability warnings when a path is absent.
 
 ---
 
-## 5. Formal Domain Grammar: Actions & Effect Primitives
+## 5. Closed Action and Effect Model
 
-Statecraft eliminates arbitrary execution by implementing a closed, mathematically sound domain grammar.
+Statecraft models the supported simulation operations as a closed set of action verbs and effect primitives. Scenario effects are interpreted by the engine; the simulator does not run arbitrary host commands or network traffic.
 
 ### The 8 Verbs (Closed Action Grammar)
 
@@ -240,8 +243,8 @@ flowchart LR
     ARCHIVE -.-> ArchiveBundle
     ARCHIVE -->|import_run| REPLAYER[Deterministic Replayer]
     REPLAYER -->|Re-execute Action Sequence| NEW_STATE[Replayed State & Events]
-    NEW_STATE -->|Field-by-Field Verification| COMP{Bit-for-Bit Identical?}
-    COMP -- Yes --> PASS[Deterministic Replay Verified]
+    NEW_STATE -->|Recorded-run Comparison| COMP{Recorded fields match?}
+    COMP -- Yes --> PASS[Replay Match Reported]
     COMP -- No --> DIVERGE[Flag State Divergence Error]
 ```
 
@@ -251,11 +254,13 @@ To replay any exported simulation run:
 statecraft replay runs/university.scr
 ```
 
-The replayer reconstructs the exact environment, executes the identical action sequence, and asserts that:
-* Final tick counts match exactly.
-* Active session matrices match across all hosts and privileges.
-* Achieved objectives match identically.
-* Generated event hashes match the recorded log bit-for-bit.
+The replayer reconstructs the environment from the archived spec and executes the recorded action sequence. The current CLI comparison reports whether the replayed run matches the recorded:
+* final tick;
+* achieved-objective list;
+* active-session count; and
+* event count.
+
+The test suite additionally checks repeat-run determinism for the reference scenario and validates a mid-run replay state.
 
 ---
 
@@ -275,16 +280,16 @@ flowchart TD
     
     GATE -- Valid Preconditions --> EXEC[Execute Atomic State Transition]
     GATE -- Missing Session / Blocked --> REJ[Reject Proposal with Failure Reason]
-    REJ --> UNCHANGED[Simulation State Remains 100% Unchanged]
+    REJ --> UNCHANGED[Simulation State Remains Unchanged]
 ```
 
 ### The Architectural Iron Rule
-> **The AI layer has ZERO authority to directly mutate state, inject sessions, create credentials, or mark objectives.**  
-> It cannot hallucinate an exploit or skip firewall rules. Every proposal must survive the engine's deterministic precondition validators.
+> **The AI layer is an action proposer, not a state authority.**
+> Its supported interface produces structured proposals; the engine evaluates their preconditions and rejects invalid proposals without applying a state delta.
 
 ---
 
-## 11. Visual Demonstration Layer (Arcade Maze Cyber Metaphor)
+## 11. Visual Demonstration Layer
 
 Statecraft includes an interactive browser visualizer accessible via:
 
@@ -292,23 +297,14 @@ Statecraft includes an interactive browser visualizer accessible via:
 statecraft demo --visual
 ```
 
-The visualizer renders the actual compiled network topology as an **orthogonal cyber maze**, translating abstract infrastructure into an intuitive visual language:
+The local dashboard renders the scenario topology, causal events, current action, telemetry, objectives, and replay status from the demo payload produced by the engine.
 
-```
-  ┌────────────────────────────────────────────────────────────────────────┐
-  │ [WEB01: DMZ Gateway] ════════ WAF GATE ════════ [DB01: Secure Vault]   │
-  │          ║                                             ║               │
-  │      Corridor                                      Corridor            │
-  │          ║                                             ║               │
-  │    [ATTACK PROBE] ──(Discovers)──> [CREDENTIALS] ──(Access)──> [PII]   │
-  └────────────────────────────────────────────────────────────────────────┘
-```
+| READY | Tick 7 — objective achieved |
+| --- | --- |
+| ![Live visualizer READY state.](docs/images/visualizer-ready.png) | ![Live visualizer at tick 7, with student PII objective achieved.](docs/images/visualizer-tick-7-objective.png) |
+| *The visualizer waits at the mission briefing before any simulated action is applied.* | *The accepted `access_data` action unlocks the student-PII objective and appears in the causal telemetry stream.* |
 
-* **Attacker Probe:** Yellow autonomous probe navigating corridors based on causal simulation events.
-* **Corridors & Intersections:** Orthogonal channels representing network routing paths and firewall channels.
-* **Security Gates:** Active WAF / IDS / EDR barriers pulsing with defensive status indicators.
-* **Data Vaults:** Protected storage repositories holding scenario target objectives (e.g., student PII).
-* **Deterministic Event Streaming:** 100% backed by real simulation events emitted from the local engine HTTP server—never a canned or simulated mock animation.
+The visualizer is a presentation layer for the locally generated demo payload; it does not access real infrastructure or execute real exploits.
 
 ---
 
@@ -401,7 +397,7 @@ Statecraft provides a comprehensive Typer-powered CLI interface:
 | `statecraft validate` | `<scenario.yaml>` | Executes the 7-stage static validation pipeline; returns exit code 0 or structured errors. |
 | `statecraft show` | `<scenario.yaml>` | Renders a terminal overview of networks, hosts, services, controls, and objectives. |
 | `statecraft run` | `-s, --scenario`, `-o, --out`, `-a, --agent` | Executes a simulation run, records telemetry, and exports an archive bundle (`.scr`). |
-| `statecraft replay` | `<run.scr>` | Re-executes a recorded `.scr` archive, asserting bit-for-bit final state and event equivalence. |
+| `statecraft replay` | `<run.scr>` | Re-executes a recorded `.scr` archive and compares replayed tick, objectives, active-session count, and event count with the archive. |
 | `statecraft demo` | `--fast`, `--ai`, `--visual`, `-s, --scenario` | Executes complete end-to-end presentation slice with live validation, simulation, and replay. |
 | `statecraft ai` | `-p, --prompt`, `-s, --scenario` | Interactive REPL or one-shot mode demonstrating AI intent translation to engine actions. |
 
@@ -438,8 +434,8 @@ Statecraft/
 │   ├── property/                      # Hypothesis property-based determinism tests
 │   └── unit/                          # Unit tests covering all subsystems (86 tests)
 ├── ARCHITECTURE.md                    # Detailed architectural summary specification
-├── PBL_DEMO.md                        # Academic project presentation & evaluation guide
-├── PBL_VERIFICATION.md                # Engineering verification report
+├── PBL_DEMO.md                        # Scripted demonstration runbook and walkthrough
+├── PBL_VERIFICATION.md                # System verification report and test summary
 ├── pyproject.toml                     # Project packaging and dependency manifest
 └── uv.lock                            # Deterministic pinned dependency lockfile
 ```
@@ -478,11 +474,11 @@ tests/unit/test_visual.py (42 tests) ....................................... PAS
 ============================= 86 passed in 1.49s ==============================
 ```
 
-### Critical Property Invariants Verified
-1. **Mathematical Determinism:** $R(S_0, \vec{A}, \text{seed}) \equiv R'(S_0, \vec{A}, \text{seed})$ across arbitrary execution runs.
-2. **Snapshot Immutability:** Executing actions at tick $T$ does not alter snapshots at ticks $0 \dots T-1$.
-3. **Closed Effect Grammar:** State mutations never violate the 12 closed effect primitives.
-4. **Boundary Isolation:** AI action proposals without prerequisite credentials or routes never produce state changes.
+### Critical Properties Covered
+1. **Reference-run determinism:** Two runs of the reference scenario with the same seed and action path have matching tick, objectives, event count, and event type/target/success fields.
+2. **Snapshot immutability:** Executing actions at tick $T$ does not alter snapshots at ticks $0 \dots T-1$.
+3. **Closed effect vocabulary:** Every declared `EffectPrimitive` is implemented by the primitive-handler registry.
+4. **Boundary isolation:** AI action proposals without prerequisite credentials or routes do not advance the engine state.
 
 ---
 
@@ -496,9 +492,9 @@ Statecraft is intentionally designed for defensive security research, red/blue-t
 
 ---
 
-## 18. Academic & Educational Context (PBL / MTE)
+## 18. Research Context
 
-Statecraft was developed as an advanced Project-Based Learning (PBL) research prototype for the Mid-Term Evaluation (MTE). It addresses key computer science and cyber operations challenges:
+Statecraft is an independent research prototype exploring compiler-style validation, discrete-event simulation, and constrained action proposal in a cybersecurity setting:
 
 * **Discrete Event Simulation:** Modeling complex distributed systems as formal finite-state machines.
 * **Compiler Design & Static Analysis:** Applying compiler verification techniques (referential integrity, graph reachability, cycle detection) to network architecture.
@@ -506,35 +502,13 @@ Statecraft was developed as an advanced Project-Based Learning (PBL) research pr
 
 ---
 
-## 19. Current MVP Status vs. Post-MTE Research Roadmap
+## 19. Current Implementation & Future Research Directions
 
-> [!IMPORTANT]
-> **Current Status: Day-1 MVP Complete & Verified.**  
-> Statecraft is currently a specialized, verified, deterministic **cybersecurity simulation engine**. The post-MTE research roadmap outlines the theoretical generalization into universal multi-domain simulation.
+> Statecraft currently provides a deterministic cybersecurity simulation environment with authoritative state transitions, validation, telemetry, fog-of-war observation, persistence, replay, CLI execution, browser visualization, and an optional AI action-proposer boundary.
+>
+> Future development will explore generalizing the underlying simulation substrate to support broader environment models, state variables, and orchestration workflows.
 
-```mermaid
-timeline
-    title Statecraft Evolution Roadmap
-    section Day-1 MVP (Current)
-        7-Stage Validation Pipeline : Completed
-        Authoritative Simulation Kernel : Completed
-        Deterministic Replay & Persistence : Completed
-        Zero-Trust AI Action Boundary : Completed
-        Visual Arcade Maze Presentation : Completed
-    section Post-MTE Phase 1
-        Universal Multi-Domain DSL : Plotted
-        Cross-Domain Physics & Cyber Hybrid : Plotted
-    section Post-MTE Phase 2
-        Multi-Agent Competitive Orchestration : Plotted
-        Reinforcement Learning Gymnasium API : Plotted
-```
-
-| Subsystem | Day-1 MVP Status (Current) | Post-MTE Direction (Future) |
-| :--- | :--- | :--- |
-| **Domain Scope** | Enterprise Cybersecurity (Networks, Hosts, WAF, Exploits) | Universal Multi-Domain Simulation (Cyber, Cyber-Physical, Logistics) |
-| **Agent Support** | Single-attacker scripted kill-chain + AI Proposer boundary | Multi-agent autonomous competitive simulation (Red vs. Blue vs. Users) |
-| **Environment Compiler** | 7-stage static validator for `EnvironmentSpec` YAML | Generalized schema compiler with domain-specific rule plugins |
-| **Replay Engine** | Deterministic `.scr` bundle verification | Distributed event tracing and time-travel branch debugging |
+Statecraft does **not** currently implement a universal multi-domain simulator or orchestration platform. Future research directions will focus on generalizing the deterministic simulation substrate so that diverse environment models, dynamic state spaces, and multi-agent orchestration workflows can be represented through the same core transition and replay architecture.
 
 ---
 
@@ -549,7 +523,7 @@ timeline
 
 ## 21. License
 
-This project is licensed under the **MIT License**. See the `LICENSE` file for details.
+No license file is currently included in this repository. Add an explicit license before redistributing or incorporating the project into other work.
 
 ---
 
