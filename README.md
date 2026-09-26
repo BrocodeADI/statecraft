@@ -54,7 +54,7 @@ flowchart TD
     VAL -- Passes --> SB[State Builder]
     SB --> INIT[Initial EnvironmentState Tick 0]
     
-    subgraph Authoritative Simulation Kernel
+    subgraph Kernel ["Authoritative Simulation Kernel"]
         INIT --> STORE[StateStore Snapshot Manager]
         ACTOR[Actor / Script / AI] -->|Propose Action| PROP[ProposedAction]
         PROP --> EXEC[ActionExecutor]
@@ -189,24 +189,24 @@ Statecraft enforces an asymmetric visibility model separating **Ground Truth** f
 
 ```mermaid
 flowchart TD
-    subgraph Ground Truth [Ground Truth: EnvironmentState]
-        ALL_NET[All Subnets: External, DMZ, Internal, Secure Vault]
-        ALL_HOST[All Hosts: WEB01, DB01, DC01, Faculty-PC]
-        ALL_CRED[All Hashes & Cleartext Credentials]
-        ALL_CTRL[Security Controls: WAF, IDS, EDR Rules & Thresholds]
-        ALL_OBJ[Target Objectives & Access Control Lists]
+    subgraph GT["Ground Truth: EnvironmentState"]
+        ALL_NET["All Subnets: External, DMZ, Internal, Secure Vault"]
+        ALL_HOST["All Hosts: WEB01, DB01, DC01, Faculty-PC"]
+        ALL_CRED["All Hashes & Cleartext Credentials"]
+        ALL_CTRL["Security Controls: WAF, IDS, EDR Rules & Thresholds"]
+        ALL_OBJ["Target Objectives & Access Control Lists"]
     end
 
-    Ground Truth -->|ObservationEngine Masking Filter| FogOfWar
-
-    subgraph FogOfWar [Attacker Observation Plane: AttackerObservation]
-        VIS_NET[Reachable Networks: Discovered via scan & pivot]
-        VIS_HOST[Discovered Hosts: Only enumerated IP/hostnames]
-        VIS_SVC[Discovered Services: Only probed ports & banners]
-        VIS_CRED[Known Credentials: Harvested via exploit or file read]
-        VIS_SESS[Active Sessions: Established by current actor]
-        VIS_OBJ[Discovered Data Assets: Disclosed via reconnaissance]
+    subgraph FOW["Attacker Observation Plane: AttackerObservation"]
+        VIS_NET["Reachable Networks: Discovered via scan & pivot"]
+        VIS_HOST["Discovered Hosts: Only enumerated IP/hostnames"]
+        VIS_SVC["Discovered Services: Only probed ports & banners"]
+        VIS_CRED["Known Credentials: Harvested via exploit or file read"]
+        VIS_SESS["Active Sessions: Established by current actor"]
+        VIS_OBJ["Discovered Data Assets: Disclosed via reconnaissance"]
     end
+
+    GT -->|ObservationEngine Masking Filter| FOW
 ```
 
 External agents receive `AttackerObservation` objects. If an attacker has not scanned `10.0.10.0/24`, probes targeting hosts in that subnet fail immediately with `FailureReason.HOST_NOT_DISCOVERED` without revealing host existence.
@@ -233,11 +233,11 @@ Statecraft includes full run archival and re-execution capabilities:
 flowchart LR
     SIM[Completed Simulation] -->|export_run| ARCHIVE[Portable .scr Archive]
     
-    subgraph ArchiveBundle [university.scr Archive Bundle]
-        MAN[manifest.json: Spec ID, Seed, Action Count]
-        SPEC[spec.yaml: Full EnvironmentSpec Snapshot]
-        EVENTS[events.jsonl: Immutable Causal Event Stream]
-        RUN[run.json: Complete Final EnvironmentState]
+    subgraph ArchiveBundle ["university.scr Archive Bundle"]
+        MAN["manifest.json: Spec ID, Seed, Action Count"]
+        SPEC["spec.yaml: Full EnvironmentSpec Snapshot"]
+        EVENTS["events.jsonl: Immutable Causal Event Stream"]
+        RUN["run.json: Complete Final EnvironmentState"]
     end
     
     ARCHIVE -.-> ArchiveBundle
@@ -274,7 +274,7 @@ flowchart TD
     OBS[AttackerObservation: Fog-of-War Filtered View] -->|Context Grounding| LLM
     LLM -->|Translates to Structured Schema| PROP[ProposedAction]
     
-    subgraph Boundary Gate [Zero-Trust Engine Boundary]
+    subgraph BoundaryGate ["Zero-Trust Engine Boundary"]
         PROP -->|Submitted as Unprivileged Intent| GATE{ActionExecutor Validation}
     end
     
@@ -317,17 +317,17 @@ graph LR
     EXT((External Internet)) -->|443/tcp, 80/tcp, 8080/tcp| FW1[Perimeter Firewall]
     FW1 --> DMZ[net.dmz: 10.0.1.0/24]
     
-    subgraph DMZ Network
-        WEB01[WEB01: Ubuntu 22.04<br/>Nginx 1.18 + StudentPortal 2.1.4<br/>Vulnerable to SQL Injection<br/>Protected by WAF]
+    subgraph DMZ_Net ["DMZ Network"]
+        WEB01["WEB01: Ubuntu 22.04<br/>Nginx 1.18 + StudentPortal 2.1.4<br/>Vulnerable to SQL Injection<br/>Protected by WAF"]
     end
     
     FW2[Internal Segmentation Firewall] -.->|Deny by Default| INT[net.internal: 10.0.10.0/24]
     WEB01 -->|5432/tcp: Allowed DB Access| DB01
     
-    subgraph Internal Campus Network
-        DB01[(DB01: PostgreSQL 13.8<br/>Student PII Asset: 20k Records)]
-        DC01[DC01: Windows Server 2019<br/>Active Directory / SMB<br/>Monitored by IDS]
-        PC01[FACULTY-PC-01: Win 10 21H2<br/>Monitored by EDR]
+    subgraph Internal_Net ["Internal Campus Network"]
+        DB01[("DB01: PostgreSQL 13.8<br/>Student PII Asset: 20k Records")]
+        DC01["DC01: Windows Server 2019<br/>Active Directory / SMB<br/>Monitored by IDS"]
+        PC01["FACULTY-PC-01: Win 10 21H2<br/>Monitored by EDR"]
     end
 ```
 
