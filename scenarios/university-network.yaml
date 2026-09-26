@@ -1,0 +1,413 @@
+id: "env-univ-001"
+seed: 42
+metadata:
+  name: "Midland University Network"
+  description: >
+    Medium university: public web portal in DMZ, internal PostgreSQL DB,
+    Active Directory, faculty workstations, one vulnerable web app, one
+    misconfigured service account.
+  difficulty: medium
+
+networks:
+  - id: net.external
+    cidr: "0.0.0.0/0"
+    zone: external
+    label: "Internet"
+
+  - id: net.dmz
+    cidr: "10.0.1.0/24"
+    zone: dmz
+    label: "DMZ"
+
+  - id: net.internal
+    cidr: "10.0.10.0/24"
+    zone: internal
+    label: "Internal Campus Network"
+
+firewall_rules:
+  - id: fw.001
+    priority: 10
+    from_network: net.external
+    to_network: net.dmz
+    port: 443
+    protocol: tcp
+    action: allow
+
+  - id: fw.002
+    priority: 20
+    from_network: net.external
+    to_network: net.dmz
+    port: 80
+    protocol: tcp
+    action: allow
+
+  - id: fw.002b
+    priority: 25
+    from_network: net.external
+    to_network: net.dmz
+    port: 8080
+    protocol: tcp
+    action: allow
+
+  - id: fw.003
+    priority: 30
+    from_network: net.external
+    to_network: net.internal
+    action: deny
+
+  - id: fw.004
+    priority: 40
+    from_network: net.dmz
+    to_network: net.internal
+    action: deny
+
+  - id: fw.005
+    priority: 50
+    from_host: host.web01
+    to_host: host.db01
+    port: 5432
+    protocol: tcp
+    action: allow
+
+  - id: fw.006
+    priority: 60
+    from_network: net.internal
+    to_network: net.dmz
+    action: allow
+
+hosts:
+  - id: host.web01
+    hostname: "WEB01"
+    network_id: net.dmz
+    ip_address: "10.0.1.10"
+    os:
+      family: linux
+      distro: ubuntu
+      version: "22.04"
+    services:
+      - id: svc.web01.https
+        host_id: host.web01
+        port: 443
+        protocol: tcp
+        software:
+          name: nginx
+          version: "1.18.0"
+        is_running: true
+        vulnerabilities: []
+        authentication:
+          type: none
+        banner: "nginx/1.18.0"
+
+      - id: svc.web01.app
+        host_id: host.web01
+        port: 8080
+        protocol: tcp
+        software:
+          name: "StudentPortal"
+          version: "2.1.4"
+        is_running: true
+        vulnerabilities: ["vuln.sqli-studentportal"]
+        authentication:
+          type: form_auth
+        banner: "Midland University Student Portal"
+
+    accounts:
+      - id: acct.web01.www-data
+        host_id: host.web01
+        username: www-data
+        privilege_level: service
+        credential_id: null
+        is_active: true
+
+      - id: acct.web01.deploy
+        host_id: host.web01
+        username: deploy
+        privilege_level: user
+        credential_id: cred.deploy.ssh
+        is_active: true
+
+    files:
+      - id: file.web01.envfile
+        host_id: host.web01
+        path: "/var/www/portal/.env"
+        content_label: "Application environment file containing DB credentials"
+        sensitivity: confidential
+        owner_account_id: acct.web01.www-data
+        readable_by: ["acct.web01.www-data", "acct.web01.deploy"]
+        contains_credential_id: cred.db01.app_user
+
+    vulnerabilities: []
+    security_controls: ["ctrl.waf.web01"]
+
+  - id: host.db01
+    hostname: "DB01"
+    network_id: net.internal
+    ip_address: "10.0.10.20"
+    os:
+      family: linux
+      distro: ubuntu
+      version: "20.04"
+    services:
+      - id: svc.db01.postgres
+        host_id: host.db01
+        port: 5432
+        protocol: tcp
+        software:
+          name: postgresql
+          version: "13.8"
+        is_running: true
+        vulnerabilities: []
+        authentication:
+          type: password
+          account_ids: ["acct.db01.app_user", "acct.db01.postgres"]
+        banner: "PostgreSQL 13.8"
+
+    accounts:
+      - id: acct.db01.app_user
+        host_id: host.db01
+        username: app_user
+        privilege_level: service
+        credential_id: cred.db01.app_user
+        is_active: true
+
+      - id: acct.db01.postgres
+        host_id: host.db01
+        username: postgres
+        privilege_level: admin
+        credential_id: cred.db01.postgres
+        is_active: true
+
+    files: []
+    vulnerabilities: []
+    security_controls: []
+
+  - id: host.dc01
+    hostname: "DC01"
+    network_id: net.internal
+    ip_address: "10.0.10.5"
+    os:
+      family: windows
+      distro: "Windows Server"
+      version: "2019"
+    services:
+      - id: svc.dc01.ldap
+        host_id: host.dc01
+        port: 389
+        protocol: tcp
+        software:
+          name: "Active Directory"
+          version: "2019"
+        is_running: true
+        vulnerabilities: []
+        authentication:
+          type: kerberos
+        banner: ""
+
+      - id: svc.dc01.smb
+        host_id: host.dc01
+        port: 445
+        protocol: tcp
+        software:
+          name: SMB
+          version: "3.1.1"
+        is_running: true
+        vulnerabilities: ["vuln.smb-misconfig-svcacct"]
+        authentication:
+          type: ntlm_kerberos
+        banner: ""
+
+    accounts:
+      - id: acct.dc01.svcbackup
+        host_id: host.dc01
+        username: svc_backup
+        privilege_level: service
+        credential_id: cred.svcbackup
+        is_active: true
+
+    files: []
+    vulnerabilities: []
+    security_controls: ["ctrl.ids.dc01"]
+
+  - id: host.client01
+    hostname: "FACULTY-PC-01"
+    network_id: net.internal
+    ip_address: "10.0.10.101"
+    os:
+      family: windows
+      distro: "Windows 10"
+      version: "21H2"
+    services: []
+    accounts:
+      - id: acct.client01.prof_ahmed
+        host_id: host.client01
+        username: "professor.ahmed"
+        privilege_level: user
+        credential_id: cred.prof_ahmed
+        is_active: true
+
+    files: []
+    vulnerabilities: []
+    security_controls: ["ctrl.edr.client01"]
+
+credentials:
+  - id: cred.deploy.ssh
+    type: ssh_key
+    value_hash: "sha256:aabbcc..."
+    is_weak: false
+    reuse_scope: []
+
+  - id: cred.db01.app_user
+    type: password
+    value_hash: "sha256:ddeeff..."
+    is_weak: false
+    reuse_scope: ["acct.db01.app_user"]
+
+  - id: cred.db01.postgres
+    type: password
+    value_hash: "sha256:112233..."
+    is_weak: true
+    reuse_scope: ["acct.db01.postgres"]
+
+  - id: cred.svcbackup
+    type: password
+    value_hash: "sha256:445566..."
+    is_weak: true
+    reuse_scope: ["acct.dc01.svcbackup", "acct.db01.postgres"]
+
+  - id: cred.prof_ahmed
+    type: password
+    value_hash: "sha256:778899..."
+    is_weak: false
+    reuse_scope: ["acct.client01.prof_ahmed"]
+
+identities:
+  - id: ident.prof_ahmed
+    username: "professor.ahmed"
+    display_name: "Dr. Ahmed Karimi"
+    groups: ["grp.faculty"]
+    credential_id: cred.prof_ahmed
+    privilege_level: user
+
+groups:
+  - id: grp.faculty
+    name: "Faculty"
+    members: ["ident.prof_ahmed"]
+    privilege_level: user
+
+  - id: grp.domain_admins
+    name: "Domain Admins"
+    members: []
+    privilege_level: admin
+
+trust_relationships:
+  - id: trust.web01-to-db01
+    from_id: host.web01
+    to_id: svc.db01.postgres
+    type: service_account_access
+    conditions: []
+    is_directional: true
+
+  - id: trust.svcbackup-reuse
+    from_id: acct.dc01.svcbackup
+    to_id: acct.db01.postgres
+    type: credential_reuse
+    conditions: []
+    is_directional: true
+
+vulnerabilities:
+  - id: vuln.sqli-studentportal
+    label: "SQL Injection in Student Portal login form"
+    class: sqli
+    preconditions:
+      - type: service_reachable
+        service_id: svc.web01.app
+      - type: service_running
+        service_id: svc.web01.app
+    required_capabilities: []
+    effects:
+      - primitive: obtain_credential
+        params:
+          credential_id: cred.db01.app_user
+          reason: "SQLi extracts connection string from response"
+      - primitive: discover_asset
+        params:
+          asset_id: asset.student_pii
+    detection_probability: 0.6
+    reliability: 1.0
+
+  - id: vuln.smb-misconfig-svcacct
+    label: "SMB service account with excessive privilege and weak credential"
+    class: misconfig
+    preconditions:
+      - type: host_reachable
+        host_id: host.dc01
+      - type: service_running
+        service_id: svc.dc01.smb
+    required_capabilities: ["credential_use"]
+    effects:
+      - primitive: grant_session
+        params:
+          host_id: host.dc01
+          account_id: acct.dc01.svcbackup
+          privilege_level: service
+    detection_probability: 0.3
+    reliability: 1.0
+
+security_controls:
+  - id: ctrl.waf.web01
+    type: waf
+    host_id: host.web01
+    network_id: null
+    is_active: true
+    alert_delay_ticks: 0
+    detects:
+      - action_verb: exploit
+        target_host: host.web01
+        vuln_class: sqli
+        detection_probability_override: 0.8
+
+  - id: ctrl.ids.dc01
+    type: ids
+    host_id: host.dc01
+    network_id: null
+    is_active: true
+    alert_delay_ticks: 1
+    detects:
+      - action_verb: exploit
+        target_host: host.dc01
+      - action_verb: authenticate
+        target_host: host.dc01
+        condition: multiple_failures
+
+  - id: ctrl.edr.client01
+    type: edr
+    host_id: host.client01
+    network_id: null
+    is_active: true
+    alert_delay_ticks: 0
+    detects:
+      - action_verb: persist
+        target_host: host.client01
+      - action_verb: escalate_privilege
+        target_host: host.client01
+
+data_assets:
+  - id: asset.student_pii
+    host_id: host.db01
+    service_id: svc.db01.postgres
+    label: "Student Personal Information (20,000 records)"
+    sensitivity: restricted
+    accessible_by: ["acct.db01.app_user", "acct.db01.postgres"]
+    is_objective: true
+
+objectives:
+  - id: obj.exfiltrate_pii
+    label: "Access student PII database"
+    type: access_data_asset
+    target_id: asset.student_pii
+    is_achieved: false
+    achieved_at_tick: null
+
+initial_attacker_position:
+  type: external
+  network_id: net.external

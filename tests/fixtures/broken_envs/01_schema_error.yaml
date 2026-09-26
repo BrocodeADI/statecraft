@@ -1,0 +1,4 @@
+# 01_schema_error.yaml - Missing required fields (id, metadata)
+seed: 42
+networks:
+  - id: net.external

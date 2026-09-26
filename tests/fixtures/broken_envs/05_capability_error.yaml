@@ -1,0 +1,46 @@
+id: "env-broken-capability"
+seed: 42
+metadata:
+  name: "Broken Capability"
+networks:
+  - id: net.external
+    cidr: "0.0.0.0/0"
+    zone: external
+    label: "Internet"
+  - id: net.dmz
+    cidr: "10.0.1.0/24"
+    zone: dmz
+    label: "DMZ"
+hosts:
+  - id: host.web01
+    hostname: "WEB01"
+    network_id: net.dmz
+    ip_address: "10.0.1.10"
+    os:
+      family: linux
+      distro: ubuntu
+      version: "22.04"
+    services:
+      - id: svc.web01.http
+        host_id: host.web01
+        port: 80
+        protocol: tcp
+        software:
+          name: nginx
+          version: "1.18.0"
+        is_running: true
+firewall_rules:
+  - id: fw.001
+    priority: 10
+    from_network: net.external
+    to_network: net.dmz
+    action: allow
+security_controls:
+  - id: ctrl.test
+    type: ids
+    host_id: host.web01
+    detects:
+      - action_verb: "invalid_action_verb"  # Invalid! Not one of the 8 action verbs
+initial_attacker_position:
+  type: external
+  network_id: net.external

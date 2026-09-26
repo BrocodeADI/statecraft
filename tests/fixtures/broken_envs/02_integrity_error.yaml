@@ -1,0 +1,27 @@
+id: "env-broken-integrity"
+seed: 42
+metadata:
+  name: "Broken Integrity"
+networks:
+  - id: net.external
+    cidr: "0.0.0.0/0"
+    zone: external
+    label: "Internet"
+hosts:
+  - id: host.web01
+    hostname: "WEB01"
+    network_id: net.nonexistent
+    ip_address: "10.0.1.10"
+    os:
+      family: linux
+      distro: ubuntu
+      version: "22.04"
+firewall_rules:
+  - id: fw.001
+    priority: 10
+    from_network: net.external
+    to_host: host.web01
+    action: allow
+initial_attacker_position:
+  type: external
+  network_id: net.external

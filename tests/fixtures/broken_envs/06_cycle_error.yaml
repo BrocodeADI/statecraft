@@ -1,0 +1,58 @@
+id: "env-broken-cycle"
+seed: 42
+metadata:
+  name: "Broken Cycle"
+networks:
+  - id: net.external
+    cidr: "0.0.0.0/0"
+    zone: external
+    label: "Internet"
+  - id: net.dmz
+    cidr: "10.0.1.0/24"
+    zone: dmz
+    label: "DMZ"
+hosts:
+  - id: host.web01
+    hostname: "WEB01"
+    network_id: net.dmz
+    ip_address: "10.0.1.10"
+    os:
+      family: linux
+      distro: ubuntu
+      version: "22.04"
+    services:
+      - id: svc.web01.http
+        host_id: host.web01
+        port: 80
+        protocol: tcp
+        software:
+          name: nginx
+          version: "1.18.0"
+        is_running: true
+    accounts:
+      - id: acct.1
+        host_id: host.web01
+        username: user1
+        privilege_level: user
+      - id: acct.2
+        host_id: host.web01
+        username: user2
+        privilege_level: user
+firewall_rules:
+  - id: fw.001
+    priority: 10
+    from_network: net.external
+    to_network: net.dmz
+    action: allow
+trust_relationships:
+  - id: trust.1
+    from_id: acct.1
+    to_id: acct.2
+    type: credential_reuse
+  - id: trust.2
+    from_id: acct.2
+    to_id: acct.1
+    type: credential_reuse
+initial_attacker_position:
+  type: external
+  network_id: net.external
