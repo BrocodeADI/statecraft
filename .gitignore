@@ -10,4 +10,7 @@ htmlcov/
 dist/
 build/
 runs/*.scr
+artifacts/runs/
+scratch/
 desktop.ini
+.venv/

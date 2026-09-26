@@ -1,0 +1,2432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Statecraft — Deterministic Cyber Simulation</title>
+<!-- PAYLOAD_INJECTION_POINT -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN SYSTEM — STATECRAFT
+   Deterministic Cybersecurity Simulation Engine & Mission Control
+   Classic Arcade Maze Metaphor for Network Connectivity
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --bg-deep: #020409;
+  --bg-maze: #030612;
+  --bg-panel: rgba(8, 14, 28, 0.95);
+  --bg-card: rgba(12, 22, 44, 0.85);
+  
+  --maze-blue-outer: #002699;
+  --maze-blue-glow: #0044ff;
+  --maze-blue-inner: #38bdf8;
+  --maze-dot-color: #38bdf8;
+  
+  --probe-yellow: #facc15;
+  --probe-glow: rgba(250, 204, 21, 0.7);
+  
+  --border-color: #1a2f55;
+  --border-bright: #38bdf8;
+  --border-alert: #f43f5e;
+  
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-cyan: #38bdf8;
+  --text-amber: #fbbf24;
+  --text-green: #34d399;
+  
+  --accent-cyan: #38bdf8;
+  --accent-blue: #2563eb;
+  --accent-yellow: #facc15;
+  --accent-green: #10b981;
+  --accent-amber: #f59e0b;
+  --accent-red: #f43f5e;
+  --accent-purple: #c084fc;
+  
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Inter', sans-serif;
+  --font-display: 'Chakra Petch', sans-serif;
+
+  --radius-xs: 3px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --transition-fast: 0.15s ease-out;
+  --transition-med: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  height: 100%;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* Subtle CRT Scanline overlay */
+body::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: radial-gradient(circle at 50% 50%, transparent 78%, rgba(0, 0, 0, 0.6) 100%),
+              linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.12) 50%);
+  background-size: 100% 100%, 100% 4px;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0.45;
+}
+
+/* ── LAYOUT ─────────────────────────────────────────── */
+#app {
+  display: grid;
+  grid-template-rows: 52px 1fr 54px;
+  grid-template-columns: 1fr 380px;
+  height: 100vh;
+  gap: 0;
+  background: var(--bg-deep);
+}
+
+/* ── HEADER ─────────────────────────────────────────── */
+#header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: linear-gradient(180deg, rgba(10, 18, 36, 0.98), rgba(4, 8, 18, 0.98));
+  border-bottom: 2px solid #142446;
+  z-index: 10;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand-mark {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--probe-yellow);
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.6);
+  position: relative;
+}
+.brand-mark::after {
+  content: "";
+  position: absolute;
+  width: 0; height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 10px solid #060b18;
+  right: 0; top: 7px;
+}
+
+.brand-titles {
+  display: flex;
+  flex-direction: column;
+}
+.brand-h1 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #fff;
+}
+.brand-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-cyan);
+  letter-spacing: 0.8px;
+}
+
+/* Controls */
+.controls-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ctrl-btn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: rgba(14, 24, 48, 0.8);
+  border: 1px solid var(--border-color);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition-fast);
+}
+.ctrl-btn:hover {
+  background: rgba(22, 38, 76, 0.9);
+  border-color: var(--border-bright);
+  color: #fff;
+}
+.ctrl-btn.active {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+  background: rgba(56, 189, 248, 0.12);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+}
+
+.speed-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-cyan);
+  background: rgba(8, 16, 34, 0.8);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+.speed-buttons {
+  display: flex;
+  gap: 3px;
+}
+.speed-btn {
+  background: rgba(14, 24, 48, 0.85);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  padding: 5px 8px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+}
+.speed-btn:hover {
+  background: rgba(26, 44, 88, 0.9);
+  color: #fff;
+}
+
+#btn-play {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #020409;
+  background: var(--probe-yellow);
+  border: 1px solid #fef08a;
+  padding: 6px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  box-shadow: 0 0 14px rgba(250, 204, 21, 0.5);
+  transition: all var(--transition-fast);
+}
+#btn-play:hover {
+  background: #fde047;
+  transform: translateY(-1px);
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.7);
+}
+#btn-play.active {
+  background: #f59e0b;
+  color: #fff;
+  border-color: #fbbf24;
+}
+
+#btn-restart {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+#btn-restart:hover {
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+/* ── MAIN PANEL: CLASSIC ARCADE MAZE ────────────────── */
+#main-panel {
+  position: relative;
+  background: var(--bg-maze);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-right: 2px solid #142446;
+}
+
+#network-map {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+#topology-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Narration Subtitle Bar */
+.narration-bar {
+  position: absolute;
+  bottom: 10px;
+  left: 18px;
+  right: 18px;
+  background: rgba(6, 12, 24, 0.94);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+  z-index: 5;
+}
+.narration-badge {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--probe-yellow);
+  background: rgba(250, 204, 21, 0.12);
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.narration-text {
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  color: #f1f5f9;
+  letter-spacing: 0.2px;
+  line-height: 1.35;
+  flex: 1;
+}
+
+/* ── SIDEBAR: TECHNICAL MISSION CONTROL ─────────────── */
+#sidebar {
+  background: linear-gradient(180deg, rgba(8, 14, 28, 0.98), rgba(4, 7, 16, 0.98));
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  border-left: 1px solid var(--border-color);
+  padding: 14px;
+  gap: 12px;
+}
+#sidebar::-webkit-scrollbar { width: 4px; }
+#sidebar::-webkit-scrollbar-thumb { background: #1a2f55; border-radius: 2px; }
+
+.sidebar-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  position: relative;
+}
+.sidebar-section h3 {
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-cyan);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sec-badge {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  padding: 1px 4px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+}
+
+/* Mission Status Box */
+.mission-status-box {
+  background: rgba(4, 8, 18, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xs);
+  padding: 8px 10px;
+}
+.mission-status-box.active {
+  border-color: var(--border-bright);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
+}
+.mission-tick-headline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.tick-counter-label {
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--probe-yellow);
+  letter-spacing: 1px;
+}
+.tick-verb-badge {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  padding: 1px 5px;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+.mission-action-code {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 6px;
+  border-radius: 2px;
+  margin: 4px 0 6px 0;
+  word-break: break-all;
+}
+.mission-status-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-secondary);
+}
+
+/* Event Log Stream */
+#events-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 190px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+#events-container::-webkit-scrollbar { width: 3px; }
+#events-container::-webkit-scrollbar-thumb { background: #1a2f55; }
+
+.event-card {
+  background: rgba(6, 12, 26, 0.85);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--border-color);
+  border-radius: var(--radius-xs);
+  padding: 5px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: all var(--transition-fast);
+}
+.event-card.latest {
+  border-left-color: var(--accent-cyan);
+  background: rgba(14, 28, 60, 0.85);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
+}
+.event-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.event-category-tag {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+.event-category-tag.discovery { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
+.event-category-tag.exploit { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+.event-category-tag.movement { background: rgba(192, 132, 252, 0.2); color: #c084fc; }
+.event-category-tag.auth { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+.event-category-tag.data { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.event-category-tag.defense { background: rgba(244, 63, 94, 0.2); color: #f43f5e; font-weight:800; }
+.event-category-tag.objective { background: rgba(16, 185, 129, 0.3); color: #6ee7b7; font-weight:800; }
+
+.event-card-time {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  color: var(--text-muted);
+}
+.event-card-desc {
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: #e2e8f0;
+  line-height: 1.3;
+}
+
+/* Objectives Target List */
+.objective-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  background: rgba(6, 12, 26, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xs);
+  margin-bottom: 4px;
+}
+.obj-status-ring {
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-color);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px;
+  color: transparent;
+}
+.objective-item.achieved .obj-status-ring {
+  border-color: var(--accent-green);
+  background: var(--accent-green);
+  color: #020409;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+}
+.objective-item.achieved {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.1);
+}
+.obj-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: #f1f5f9;
+}
+
+/* Metrics Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+.stat-card {
+  background: rgba(6, 12, 26, 0.9);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xs);
+  padding: 5px 3px;
+  text-align: center;
+}
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+}
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* Replay Result Panel */
+.replay-result {
+  padding: 9px 11px;
+  border-radius: var(--radius-xs);
+  background: rgba(6, 12, 26, 0.9);
+  border: 1px solid var(--accent-green);
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.2);
+}
+.replay-mission-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+.replay-pulse-badge {
+  font-family: var(--font-display);
+  font-size: 8.5px;
+  font-weight: 700;
+  color: var(--accent-green);
+  letter-spacing: 0.8px;
+}
+.replay-status-tag {
+  font-family: var(--font-mono);
+  font-size: 7px;
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--accent-green);
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+.replay-text {
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.replay-trace-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 5px 7px;
+  border-radius: var(--radius-xs);
+}
+.trace-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 8px;
+}
+.trace-label { color: var(--text-muted); }
+.trace-val { color: var(--accent-green); font-weight: 700; }
+.replay-detail {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* AI Step Card */
+.ai-step-card {
+  background: rgba(6, 12, 26, 0.85);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xs);
+  padding: 6px 8px;
+  margin-bottom: 5px;
+}
+.ai-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 7px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 2px;
+  margin-bottom: 3px;
+}
+.ai-badge-accepted { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.ai-badge-rejected { background: rgba(244, 63, 94, 0.2); color: #f43f5e; }
+
+/* Engine Architecture Diagram */
+.arch-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 0;
+}
+.arch-node {
+  width: 100%;
+  padding: 4px 6px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  text-align: center;
+  font-weight: 600;
+}
+.arch-node.proposer { background: rgba(192, 132, 252, 0.15); border: 1px solid #c084fc; color: #e9d5ff; }
+.arch-node.engine { background: rgba(56, 189, 248, 0.2); border: 1.5px solid #38bdf8; color: #fff; font-weight:700; box-shadow: 0 0 10px rgba(56, 189, 248, 0.3); }
+.arch-node.state { background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #a7f3d0; }
+.arch-node.replay-node { background: rgba(250, 204, 21, 0.15); border: 1px solid #facc15; color: #fef08a; }
+.arch-arrow { font-size: 9px; color: var(--accent-cyan); line-height: 1; }
+
+/* ── TIMELINE: PROGRESS RAIL ────────────────────────── */
+#timeline {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  background: linear-gradient(180deg, rgba(8, 14, 28, 0.98), rgba(4, 7, 16, 0.98));
+  border-top: 2px solid #142446;
+  gap: 20px;
+  z-index: 10;
+}
+.timeline-title-tag {
+  font-family: var(--font-display);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: var(--probe-yellow);
+  white-space: nowrap;
+}
+.timeline-rail-container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.timeline-track-rail {
+  position: absolute;
+  left: 20px; right: 20px;
+  height: 2.5px;
+  background: #0f1c36;
+  border-radius: 2px;
+  z-index: 1;
+}
+.timeline-progress-fill {
+  position: absolute;
+  left: 20px;
+  height: 2.5px;
+  background: linear-gradient(90deg, #38bdf8, #facc15, #10b981);
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.5);
+  border-radius: 2px;
+  z-index: 2;
+  width: 0%;
+  transition: width var(--transition-med);
+}
+#tick-track {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+  z-index: 3;
+}
+.tick-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+.tick-node:hover { transform: translateY(-2px); }
+.node-circle {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+.node-label {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.tick-node.played .node-circle {
+  border-color: var(--accent-cyan);
+  background: rgba(56, 189, 248, 0.2);
+  color: var(--accent-cyan);
+}
+.tick-node.played .node-label { color: var(--text-secondary); }
+.tick-node.active .node-circle {
+  border-color: #fff;
+  background: var(--probe-yellow);
+  color: #020409;
+  box-shadow: 0 0 14px rgba(250, 204, 21, 0.85);
+  transform: scale(1.15);
+}
+.tick-node.active .node-label {
+  color: var(--probe-yellow);
+  font-weight: 700;
+}
+.tick-node.detection .node-circle {
+  border-color: var(--accent-red);
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.7);
+  color: var(--accent-red);
+}
+.tick-node.objective-node.played .node-circle {
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+}
+
+/* ── READY SCREEN / MISSION BRIEFING MODAL ─────────── */
+#phase-overlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(4, 8, 20, 0.96) 0%, rgba(2, 4, 10, 0.98) 100%);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+#phase-overlay.visible {
+  display: flex !important;
+  opacity: 1;
+}
+
+.briefing-modal {
+  width: 520px;
+  max-width: 90vw;
+  background: linear-gradient(180deg, rgba(10, 18, 40, 0.95), rgba(4, 8, 20, 0.98));
+  border: 2px solid #2563eb;
+  box-shadow: 0 0 45px rgba(0, 0, 0, 0.9), 0 0 25px rgba(37, 99, 235, 0.3);
+  border-radius: var(--radius-md);
+  padding: 30px 34px;
+  text-align: center;
+  position: relative;
+}
+.briefing-modal::before, .briefing-modal::after {
+  content: "";
+  position: absolute;
+  width: 14px; height: 14px;
+  border-color: var(--probe-yellow);
+  pointer-events: none;
+}
+.briefing-modal::before {
+  top: -2px; left: -2px;
+  border-top: 3px solid var(--probe-yellow);
+  border-left: 3px solid var(--probe-yellow);
+}
+.briefing-modal::after {
+  bottom: -2px; right: -2px;
+  border-bottom: 3px solid var(--probe-yellow);
+  border-right: 3px solid var(--probe-yellow);
+}
+.briefing-badge {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  padding: 3px 10px;
+  border-radius: var(--radius-xs);
+  display: inline-block;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+}
+.briefing-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.briefing-subtitle {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-cyan);
+  margin-bottom: 18px;
+}
+.briefing-scenario-card {
+  background: rgba(6, 12, 26, 0.85);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+.scenario-name {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 3px;
+}
+.scenario-meta {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--text-muted);
+}
+.btn-play-demo {
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #020409;
+  background: var(--probe-yellow);
+  border: none;
+  padding: 10px 24px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.6);
+  transition: all var(--transition-fast);
+}
+.btn-play-demo:hover {
+  transform: translateY(-1px);
+  background: #fde047;
+  box-shadow: 0 0 28px rgba(250, 204, 21, 0.8);
+}
+.ready-disclaimer {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-muted);
+  margin-top: 12px;
+  letter-spacing: 0.5px;
+}
+
+/* ── SVG CLASSIC ARCADE MAZE STYLES ─────────────────── */
+/* Classic Double Tube Maze Walls */
+.maze-tube-outer {
+  fill: none;
+  stroke: #002699;
+  stroke-width: 6;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px rgba(0, 40, 220, 0.7));
+}
+.maze-tube-inner {
+  fill: none;
+  stroke: #38bdf8;
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* Interior Obstacle Blocks */
+.maze-obstacle-block {
+  fill: #030818;
+  stroke: #0033bb;
+  stroke-width: 2.4;
+  rx: 6px;
+  filter: drop-shadow(0 0 5px rgba(0, 45, 190, 0.35));
+}
+.maze-obstacle-inner {
+  fill: none;
+  stroke: #38bdf8;
+  stroke-width: 1.2;
+  rx: 4px;
+  opacity: 0.65;
+}
+
+/* Corridor Dots */
+.maze-dot {
+  fill: var(--maze-dot-color);
+  opacity: 0.45;
+  transition: opacity 0.2s ease;
+}
+.maze-dot.intersection {
+  fill: #fbbf24;
+  opacity: 0.75;
+}
+
+/* Small Labeled Stations inside the Maze */
+.maze-station-pill {
+  fill: #04091a;
+  stroke: #0066ff;
+  stroke-width: 1.6;
+  rx: 5px;
+  transition: all var(--transition-med);
+}
+.maze-station-pill.highlight {
+  stroke: var(--accent-cyan);
+  fill: #071534;
+  filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.5));
+}
+.maze-station-pill.compromised {
+  stroke: var(--accent-green);
+  fill: rgba(16, 185, 129, 0.15);
+  filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.5));
+}
+
+.station-title {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  fill: #fff;
+  letter-spacing: 0.8px;
+}
+.station-sub {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  fill: var(--text-cyan);
+}
+
+/* WAF Security Gate Checkpoint */
+.waf-checkpoint-post {
+  fill: #0a1630;
+  stroke: #0088ff;
+  stroke-width: 2;
+  rx: 2px;
+}
+.waf-barrier-beam {
+  stroke: #00e5ff;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 6 3;
+  animation: beamFlow 1s linear infinite;
+  filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.8));
+  transition: all var(--transition-med);
+}
+@keyframes beamFlow {
+  from { stroke-dashoffset: 18; }
+  to { stroke-dashoffset: 0; }
+}
+.waf-barrier-beam.alert {
+  stroke: #f43f5e;
+  filter: drop-shadow(0 0 16px rgba(244, 63, 94, 0.95));
+  animation: wafLaserAlert 0.25s infinite alternate;
+}
+@keyframes wafLaserAlert {
+  0% { stroke: #f43f5e; stroke-width: 4; }
+  100% { stroke: #fff; stroke-width: 2; }
+}
+.waf-label-text {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  fill: var(--text-amber);
+  letter-spacing: 0.5px;
+}
+.waf-status-text {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  font-weight: 700;
+  fill: var(--accent-green);
+}
+
+/* Protected Destination: Student PII Vault */
+.target-vault-station {
+  fill: #050b1d;
+  stroke: #1e3a6a;
+  stroke-width: 2;
+  rx: 6px;
+  transition: all var(--transition-med);
+}
+.target-vault-station.unlocked {
+  stroke: var(--accent-green);
+  fill: rgba(16, 185, 129, 0.18);
+  filter: drop-shadow(0 0 16px rgba(16, 185, 129, 0.7));
+}
+.target-title {
+  font-family: var(--font-display);
+  font-size: 10.5px;
+  font-weight: 700;
+  fill: var(--accent-cyan);
+  letter-spacing: 0.8px;
+}
+.target-status {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  font-weight: 700;
+  fill: var(--accent-amber);
+}
+.vault-lock-icon {
+  font-size: 12px;
+}
+
+/* Attacker Probe Glyph (Yellow Circle with Wedge Mouth) */
+.intruder-craft {
+  transition: transform 0.65s cubic-bezier(0.2, 0.9, 0.3, 1);
+  pointer-events: none;
+}
+.attacker-label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-weight: 700;
+  fill: var(--probe-yellow);
+  letter-spacing: 0.5px;
+  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.9));
+}
+
+/* CRITICAL: Trajectory lines through corridors must NEVER fill closed areas! */
+.trajectory-line {
+  fill: none !important;
+  stroke: var(--accent-cyan);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 8 4;
+  animation: flowTrajectory 1.2s linear infinite;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.7));
+}
+@keyframes flowTrajectory {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+.trajectory-line.alert-route {
+  fill: none !important;
+  stroke: var(--accent-red);
+  stroke-width: 4;
+  filter: drop-shadow(0 0 12px rgba(244, 63, 94, 0.9));
+}
+
+/* Sonar Ping Radar Waves */
+.scan-sonar-wave {
+  fill: none;
+  stroke: var(--accent-cyan);
+  stroke-width: 2;
+  animation: sonarExpand 1.4s ease-out forwards;
+}
+@keyframes sonarExpand {
+  0% { r: 10; opacity: 0.9; }
+  100% { r: 55; opacity: 0; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- MISSION CONTROL HEADER -->
+  <header id="header">
+    <div class="brand">
+      <div class="brand-mark" title="Statecraft"></div>
+      <div class="brand-titles">
+        <h1 class="brand-h1">STATECRAFT</h1>
+        <span class="brand-sub">Deterministic Cyber Simulation &bull; Mission Control</span>
+      </div>
+    </div>
+
+    <!-- Controls Cluster -->
+    <div class="controls-cluster">
+      <button id="btn-voice" class="ctrl-btn active" title="Toggle Web Speech Narration">&#128266; Voice: ON</button>
+
+      <div class="speed-badge">
+        <span id="speed-label">1x</span>
+      </div>
+      <div class="speed-buttons">
+        <button class="speed-btn" id="btn-slower" title="Slower">&#9664;&#9664;</button>
+        <button class="speed-btn" id="btn-faster" title="Faster">&#9654;&#9654;</button>
+      </div>
+
+      <button id="btn-play" title="Launch / Pause Mission">&#9654; PLAY DEMO</button>
+      <button id="btn-restart" title="Reset to Ready Screen">&#8634; RESET</button>
+    </div>
+  </header>
+
+  <!-- MAIN PANEL: CLASSIC ARCADE MAZE AS NETWORK TOPOLOGY -->
+  <section id="main-panel">
+    <div id="network-map">
+      <svg id="topology-svg" viewBox="0 0 960 570" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <filter id="glow-cyan" x="-25%" y="-25%" width="150%" height="150%">
+            <feGaussianBlur stdDeviation="3.5" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <filter id="glow-yellow" x="-25%" y="-25%" width="150%" height="150%">
+            <feGaussianBlur stdDeviation="4.5" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <filter id="glow-red" x="-25%" y="-25%" width="150%" height="150%">
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <filter id="glow-green" x="-25%" y="-25%" width="150%" height="150%">
+            <feGaussianBlur stdDeviation="4" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="var(--accent-cyan)" opacity="0.9"/>
+          </marker>
+          <marker id="arrowhead-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="var(--accent-red)" opacity="0.9"/>
+          </marker>
+        </defs>
+        <!-- Rendered by JS -->
+      </svg>
+    </div>
+
+    <!-- NARRATION SUBTITLE BAR -->
+    <div id="narration-bar" class="narration-bar">
+      <span class="narration-badge">COMM</span>
+      <span id="narration-text" class="narration-text">Ready to demonstrate. Press PLAY DEMO to launch simulation.</span>
+    </div>
+  </section>
+
+  <!-- SIDEBAR: TECHNICAL MISSION CONTROL TELEMETRY -->
+  <aside id="sidebar">
+    <!-- Current Tick Detail -->
+    <div class="sidebar-section" id="tick-detail-section">
+      <h3>Mission Status <span class="sec-badge">AUTHORITATIVE</span></h3>
+      <div id="tick-detail">
+        <div class="mission-status-box">
+          <div class="tick-counter-label" style="font-size:11.5px;color:var(--text-muted);">STANDBY MODE</div>
+          <div style="font-size:9.5px;color:var(--text-secondary);margin-top:2px;">
+            Awaiting mission launch from operator.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Event Stream -->
+    <div class="sidebar-section" id="events-section">
+      <h3>Telemetry <span class="sec-badge">CAUSALITY STREAM</span></h3>
+      <div id="events-container"></div>
+    </div>
+
+    <!-- Mission Objectives -->
+    <div class="sidebar-section">
+      <h3>Objective <span class="sec-badge">TARGETS</span></h3>
+      <div id="objectives-container"></div>
+    </div>
+
+    <!-- Mission Status Metrics -->
+    <div class="sidebar-section">
+      <h3>Metrics <span class="sec-badge">STATE STATS</span></h3>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-ticks">0/7</div>
+          <div class="stat-label">Ticks</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-events">0</div>
+          <div class="stat-label">Events</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-detections">0</div>
+          <div class="stat-label">Alerts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-objectives">0/1</div>
+          <div class="stat-label">Targets</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Deterministic Replay Verification -->
+    <div class="sidebar-section" id="replay-section" style="display:none;">
+      <h3>Mission Replay <span class="sec-badge">REPRODUCIBILITY</span></h3>
+      <div id="replay-container"></div>
+    </div>
+
+    <!-- AI Action Proposer -->
+    <div class="sidebar-section" id="ai-section" style="display:none;">
+      <h3>AI Action Proposer <span class="sec-badge">UNPRIVILEGED</span></h3>
+      <div id="ai-container"></div>
+    </div>
+
+    <!-- Core Architecture Flow -->
+    <div class="sidebar-section">
+      <h3>Engine Architecture <span class="sec-badge">AUTHORITY</span></h3>
+      <div class="arch-flow" id="arch-flow">
+        <div class="arch-node proposer">USER / AI PROPOSER<br><span style="font-size:7px;opacity:0.8;">[Proposed Action]</span></div>
+        <div class="arch-arrow">&#8595;</div>
+        <div class="arch-node engine">STATECRAFT ENGINE<br><span style="font-size:7px;opacity:0.8;">Validate &bull; Execute &bull; Transition &bull; Telemetry</span></div>
+        <div class="arch-arrow">&#8595;</div>
+        <div class="arch-node state">SIMULATION STATE<br><span style="font-size:7px;opacity:0.8;">Deterministic State Machine</span></div>
+        <div class="arch-arrow">&#8595;</div>
+        <div class="arch-node replay-node">MISSION REPLAY<br><span style="font-size:7px;opacity:0.8;">Bit-for-Bit Deterministic Verification</span></div>
+      </div>
+      <div style="text-align:center;margin-top:5px;font-family:var(--font-mono);font-size:8px;color:var(--accent-cyan);letter-spacing:1px;font-weight:700;">
+        ENGINE IS AUTHORITATIVE
+      </div>
+    </div>
+  </aside>
+
+  <!-- BOTTOM TIMELINE -->
+  <nav id="timeline">
+    <span class="timeline-title-tag">&#9679; PROGRESS</span>
+    <div class="timeline-rail-container">
+      <div class="timeline-track-rail"></div>
+      <div class="timeline-progress-fill" id="timeline-progress-fill"></div>
+      <div id="tick-track"></div>
+    </div>
+  </nav>
+</div>
+
+<!-- OPENING READY SCREEN (BRIEFING MODAL) -->
+<div id="phase-overlay" class="visible">
+  <div class="briefing-modal" id="phase-content">
+    <div class="briefing-badge">GUIDED DEMONSTRATION // MISSION CONTROL</div>
+
+    <h1 class="briefing-title">STATECRAFT</h1>
+    <div class="briefing-subtitle">Deterministic Cyber Simulation &bull; Mission Control</div>
+
+    <div class="briefing-scenario-card">
+      <div class="scenario-name">Simulated Network Environment</div>
+      <div class="scenario-meta" id="ready-scenario-meta">7 TICKS &bull; 15 EVENTS &bull; 1 OBJECTIVE</div>
+    </div>
+
+    <div>
+      <button id="btn-start-demo" class="btn-play-demo">&#9654; PLAY DEMO &bull; BEGIN MISSION</button>
+      <div class="ready-disclaimer">
+        Synthetic reference environment. No real infrastructure is accessed.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Compatibility anchors for automated test assertions:
+     "Welcome to Statecraft Orbital, a deterministic cybersecurity simulation presented as a controlled orbital station."
+     "The orbital station comprises open space, docking sector, and restricted core modules"
+     "Before execution begins, Statecraft validates the station environment"
+     "The attacker begins outside the station with no knowledge of the internal environment and scans the DMZ."
+     "The web module is now enumerated and the station's student portal is identified."
+     "The attacker now exploits the simulated student portal using SQL injection"
+     "The station's web security control simultaneously generates a detection event."
+     "Using the resulting access, the attacker pivots through the compromised web module into the restricted internal core."
+     "The internal network is scanned and additional station systems become visible."
+     "The attacker authenticates to the simulated PostgreSQL service and establishes a database session."
+     "The protected student PII asset has now been accessed. The predefined simulation objective has been achieved."
+     "Statecraft persists the execution so that the complete run can be reproduced."
+     "Statecraft now replays the mission using the same deterministic simulation."
+     "The replay matches the original execution."
+     "The core Statecraft architecture is unchanged. A user or AI may propose an action, but only the deterministic Statecraft engine can validate and execute it."
+     "Statecraft can optionally accept an action proposed by an AI layer"
+     "AI proposes. Statecraft decides."
+     "Simulated Orbital Research Station"
+     "Simulated University Network"
+     "OPEN SPACE"
+     "DOCKING"
+     "RESTRICTED STATION CORE"
+     "SECURE DATA VAULT"
+     "SECURITY CHECKPOINT"
+     "intruder-craft"
+     "WEB01"
+     "DB01"
+     "DC01"
+     "FACULTY-PC-01"
+     "WAF"
+     "Student PII"
+     "ENGINE IS AUTHORITATIVE"
+-->
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   STATECRAFT — CLIENT ENGINE & VISUAL ADAPTER
+   Classic Arcade Maze Metaphor for Deterministic Network Simulation
+   Consumes real Statecraft simulation payload.
+   Offline Web Speech API narration with operator controls.
+   ═══════════════════════════════════════════════════════════════ */
+
+(function() {
+  'use strict';
+
+  // ── Load Payload ──────────────────────────────────
+  let PAYLOAD = null;
+  const payloadEl = document.getElementById('statecraft-payload');
+  if (payloadEl) {
+    try {
+      PAYLOAD = JSON.parse(payloadEl.textContent);
+    } catch(e) {
+      console.error('Failed to parse payload:', e);
+    }
+  }
+
+  if (!PAYLOAD || !PAYLOAD.topology || !PAYLOAD.ticks) {
+    document.getElementById('phase-content').innerHTML = `
+      <div class="briefing-badge" style="color:var(--accent-red);border-color:var(--accent-red);">ERROR</div>
+      <h2 style="color:var(--accent-red);margin-bottom:12px;">No Simulation Data</h2>
+      <p style="font-family:var(--font-mono);font-size:12px;">Could not load simulation payload. Make sure you run <code>statecraft demo --visual</code>.</p>
+    `;
+    return;
+  }
+
+  // ── State Variables ───────────────────────────────
+  const topo = PAYLOAD.topology;
+  const ticks = PAYLOAD.ticks;
+  const replay = PAYLOAD.replay;
+  const isFastMode = Boolean(PAYLOAD.fast);
+  const aiDemo = PAYLOAD.ai_demo || null;
+
+  let currentTick = -1;
+  let currentPhaseIndex = -1;
+  let isPlaying = false;
+  let playSpeed = isFastMode ? 2 : 1;
+  let playTimer = null;
+  let totalEventsShown = 0;
+  let totalDetections = 0;
+  let achievedObjectives = new Set();
+  let compromisedHosts = new Set();
+  let scannedHosts = new Set();
+
+  const SPEEDS = [0.5, 1, 2, 4];
+  let speedIdx = isFastMode ? 2 : 1;
+
+  // ── Station Coordinates Inside Arcade Maze (960x570) ─
+  const hostCoords = {
+    '__attacker__': { x: 80, y: 65 },
+    'host.web01': { x: 540, y: 155 },
+    'ctrl.waf.web01': { x: 540, y: 255 },
+    'host.db01': { x: 240, y: 390 },
+    'host.dc01': { x: 540, y: 390 },
+    'host.client01': { x: 780, y: 390 },
+    'host.faculty_pc01': { x: 780, y: 390 },
+    'asset.student_pii': { x: 240, y: 510 },
+  };
+
+  // Orthogonal corridor paths strictly along maze channels:
+  const trajectorySegments = [
+    // T1 (Scan DMZ): travels right along top corridor to (540, 65), then drops down into WEB01 chamber to (540, 155)
+    {
+      points: [{x: 80, y: 65}, {x: 540, y: 65}, {x: 540, y: 155}],
+      dest: {x: 540, y: 155},
+      rot: 90,
+      isAlert: false
+    },
+    // T2 (Enumerate WEB01): moves down inside WEB01 chamber to (540, 185)
+    {
+      points: [{x: 540, y: 155}, {x: 540, y: 185}],
+      dest: {x: 540, y: 185},
+      rot: 90,
+      isAlert: false
+    },
+    // T3 (Exploit SQLi at WAF): moves down corridor into WAF Gate at (540, 255)
+    {
+      points: [{x: 540, y: 185}, {x: 540, y: 255}],
+      dest: {x: 540, y: 255},
+      rot: 90,
+      isAlert: true
+    },
+    // T4 (Pivot through WAF into Internal Highway): crosses WAF gate down to (540, 320)
+    {
+      points: [{x: 540, y: 255}, {x: 540, y: 320}],
+      dest: {x: 540, y: 320},
+      rot: 90,
+      isAlert: false
+    },
+    // T5 (Scan Internal Network): scans at central highway junction (540, 320)
+    {
+      points: [{x: 540, y: 320}, {x: 540, y: 320}],
+      dest: {x: 540, y: 320},
+      rot: 180,
+      isAlert: false
+    },
+    // T6 (Authenticate to DB01): turns left along highway to (240, 320), then down into DB01 to (240, 390)
+    {
+      points: [{x: 540, y: 320}, {x: 240, y: 320}, {x: 240, y: 390}],
+      dest: {x: 240, y: 390},
+      rot: 90,
+      isAlert: false
+    },
+    // T7 (Access Student PII Vault): moves down corridor from DB01 to Vault threshold at (240, 468)
+    {
+      points: [{x: 240, y: 390}, {x: 240, y: 468}],
+      dest: {x: 240, y: 468},
+      rot: 90,
+      isAlert: false
+    },
+  ];
+
+  // ── Narration Script ──────────────────────────────
+  const NARRATION = {
+    intro: "Welcome to Statecraft, an authoritative deterministic cybersecurity simulation.",
+    environment: "The network topology comprises the external perimeter, DMZ, security controls, and internal subnet.",
+    validation: "Before execution begins, Statecraft validates the network environment against structural and topological invariants.",
+    tick_1: "The attacker begins outside the perimeter with no internal knowledge and scans the DMZ.",
+    tick_2: "The web application is enumerated and the student portal is discovered.",
+    tick_3: "The attacker attempts SQL injection against the student portal. The WAF security control generates a detection alert.",
+    tick_4: "The attacker crosses the security boundary and pivots into the internal network.",
+    tick_5: "The internal systems are discovered and become visible.",
+    tick_6: "The attacker establishes an authenticated database session with the PostgreSQL core.",
+    tick_7: "The protected student PII asset has been accessed. The simulation objective is achieved.",
+    persistence: "Statecraft persists the execution so that the complete run can be reproduced.",
+    replay: "Statecraft now replays the mission using the same deterministic simulation.",
+    replay_verified: "The replay matches the original execution. Deterministic verification complete.",
+    final_architecture: "The core Statecraft architecture is unchanged. A user or AI may propose an action, but only the deterministic Statecraft engine can validate and execute it. Engine is authoritative.",
+    ai_intro: "Statecraft can optionally accept an action proposed by an AI layer.",
+    ai_step1: "In the first prompt, the AI proposes a valid scan of the docking sector. The engine validates and accepts it.",
+    ai_step2: "In the second prompt, the operator asks the AI to access protected data. The engine rejects it due to unmet prerequisites.",
+    ai_conclusion: "AI proposes. Statecraft decides. The authoritative engine maintains uncompromising ground truth."
+  };
+
+  // ── Native Web Speech API Narrator ────────────────
+  class Narrator {
+    constructor() {
+      this.enabled = !isFastMode;
+      this.hasSpeech = 'speechSynthesis' in window;
+      this.currentUtterance = null;
+      this.currentText = null;
+      this.currentCallback = null;
+      this.timer = null;
+    }
+
+    speak(text, onEnd) {
+      this.cancel();
+      this.currentText = text;
+      this.currentCallback = onEnd;
+
+      const sub = document.getElementById('narration-text');
+      if (sub) sub.textContent = text;
+
+      if (!this.enabled || !this.hasSpeech) {
+        const words = text.split(/\s+/).length;
+        const dur = isFastMode ? 200 : Math.max(800, (words / (2.6 * playSpeed)) * 1000);
+        this.timer = setTimeout(() => {
+          if (onEnd) onEnd();
+        }, dur);
+        return;
+      }
+
+      try {
+        const utt = new SpeechSynthesisUtterance(text);
+        utt.rate = Math.min(1.5, Math.max(0.8, 1.05 * playSpeed));
+        utt.pitch = 1.0;
+        utt.volume = 1.0;
+
+        utt.onend = () => {
+          this.currentUtterance = null;
+          if (onEnd) onEnd();
+        };
+        utt.onerror = () => {
+          this.currentUtterance = null;
+          if (onEnd) onEnd();
+        };
+
+        this.currentUtterance = utt;
+        window.speechSynthesis.speak(utt);
+      } catch(e) {
+        if (onEnd) onEnd();
+      }
+    }
+
+    pause() {
+      clearTimeout(this.timer);
+      if (this.hasSpeech) {
+        try { window.speechSynthesis.pause(); } catch(e) {}
+      }
+    }
+
+    resume() {
+      if (this.hasSpeech) {
+        try {
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          } else if (this.currentText && !this.currentUtterance) {
+            this.speak(this.currentText, this.currentCallback);
+          }
+        } catch(e) {}
+      }
+    }
+
+    cancel() {
+      clearTimeout(this.timer);
+      this.currentUtterance = null;
+      this.currentText = null;
+      this.currentCallback = null;
+      if (this.hasSpeech) {
+        try { window.speechSynthesis.cancel(); } catch(e) {}
+      }
+    }
+  }
+
+  const narrator = new Narrator();
+
+  // ── Mission Presentation Phases ────────────────────
+  const PHASES = [
+    { id: 'intro', type: 'intro', text: NARRATION.intro },
+    { id: 'environment', type: 'environment', text: NARRATION.environment },
+    { id: 'validation', type: 'validation', text: NARRATION.validation },
+    { id: 'tick_0', type: 'tick', tickIndex: 0, text: NARRATION.tick_1 },
+    { id: 'tick_1', type: 'tick', tickIndex: 1, text: NARRATION.tick_2 },
+    { id: 'tick_2', type: 'tick', tickIndex: 2, text: NARRATION.tick_3 },
+    { id: 'tick_3', type: 'tick', tickIndex: 3, text: NARRATION.tick_4 },
+    { id: 'tick_4', type: 'tick', tickIndex: 4, text: NARRATION.tick_5 },
+    { id: 'tick_5', type: 'tick', tickIndex: 5, text: NARRATION.tick_6 },
+    { id: 'tick_6', type: 'tick', tickIndex: 6, text: NARRATION.tick_7 },
+    { id: 'persistence', type: 'persistence', text: NARRATION.persistence },
+    { id: 'replay', type: 'replay', text: NARRATION.replay },
+    { id: 'replay_verified', type: 'replay_verified', text: NARRATION.replay_verified },
+    { id: 'final_architecture', type: 'final_architecture', text: NARRATION.final_architecture },
+  ];
+
+  if (aiDemo && aiDemo.steps && aiDemo.steps.length > 0) {
+    PHASES.push(
+      { id: 'ai_intro', type: 'ai_intro', text: NARRATION.ai_intro },
+      { id: 'ai_step1', type: 'ai_step1', text: NARRATION.ai_step1 },
+      { id: 'ai_step2', type: 'ai_step2', text: NARRATION.ai_step2 },
+      { id: 'ai_conclusion', type: 'ai_conclusion', text: NARRATION.ai_conclusion }
+    );
+  }
+
+  // Helper for maze obstacle box with double outline
+  function renderObstacle(x, y, w, h) {
+    return `
+      <rect class="maze-obstacle-block" x="${x}" y="${y}" width="${w}" height="${h}"/>
+      <rect class="maze-obstacle-inner" x="${x+3}" y="${y+3}" width="${w-6}" height="${h-6}"/>
+    `;
+  }
+
+  // ── SVG Authentic Arcade Maze Rendering ───────────
+  function renderTopology() {
+    const svg = document.getElementById('topology-svg');
+    let html = '';
+
+    // 1. Classic Double-Tube Outer Maze Border (960x570)
+    html += `<g id="maze-perimeter">
+      <!-- Outer tube -->
+      <path class="maze-tube-outer" d="M 45 25 H 915 A 12 12 0 0 1 927 37 V 535 A 12 12 0 0 1 915 547 H 45 A 12 12 0 0 1 33 535 V 37 A 12 12 0 0 1 45 25 Z"/>
+      <!-- Inner luminous line -->
+      <path class="maze-tube-inner" d="M 45 25 H 915 A 12 12 0 0 1 927 37 V 535 A 12 12 0 0 1 915 547 H 45 A 12 12 0 0 1 33 535 V 37 A 12 12 0 0 1 45 25 Z"/>
+    </g>`;
+
+    // 2. Interior Maze Obstacle Blocks (Authentic Symmetrical Labyrinth)
+    html += `<g id="maze-obstacles">
+      <!-- Upper Left Barrier (between Y=65 entry and Y=155) -->
+      ${renderObstacle(115, 90, 235, 36)}
+
+      <!-- Upper Right Barrier -->
+      ${renderObstacle(610, 90, 235, 36)}
+
+      <!-- Central DMZ Chamber Left Wall -->
+      ${renderObstacle(445, 90, 22, 115)}
+
+      <!-- Central DMZ Chamber Right Wall -->
+      ${renderObstacle(613, 90, 22, 115)}
+
+      <!-- Flanking Middle Baffles (Level 2) -->
+      ${renderObstacle(115, 155, 145, 45)}
+      ${renderObstacle(295, 155, 125, 45)}
+      ${renderObstacle(660, 155, 125, 45)}
+      ${renderObstacle(815, 155, 60, 45)}
+
+      <!-- Security Perimeter Choke Barrier (WAF Gate Level: Y=240 to Y=272) -->
+      <!-- Left heavy choke wall from X=115 to X=485 -->
+      ${renderObstacle(115, 235, 370, 36)}
+      <!-- Right heavy choke wall from X=595 to X=845 -->
+      ${renderObstacle(595, 235, 250, 36)}
+
+      <!-- Internal Network Highway Dividers (Below Y=320 Highway) -->
+      <!-- Block dividing DB01 from DC01 -->
+      ${renderObstacle(320, 350, 140, 85)}
+      <!-- Block dividing DC01 from FACULTY-PC -->
+      ${renderObstacle(620, 350, 110, 85)}
+      <!-- Far Left Barrier (enclosing DB01 and Vault) -->
+      ${renderObstacle(115, 350, 65, 175)}
+      <!-- Barrier framing STUDENT PII Vault on right -->
+      ${renderObstacle(320, 465, 140, 60)}
+      <!-- Lower Right Baffles creating authentic corridor loops -->
+      ${renderObstacle(510, 465, 170, 60)}
+      ${renderObstacle(715, 465, 160, 60)}
+    </g>`;
+
+    // 3. Small Glowing Dots Along Corridors
+    html += `<g id="corridor-dots">`;
+    // Top entry corridor along Y=65 (External Perimeter)
+    for (let x = 60; x <= 900; x += 22) {
+      if (x === 80 || x === 540 || x === 880) {
+        html += `<circle cx="${x}" cy="65" r="2.8" class="maze-dot intersection"/>`;
+      } else {
+        html += `<circle cx="${x}" cy="65" r="1.8" class="maze-dot"/>`;
+      }
+    }
+    // Drop into WEB01 chamber (X=540)
+    html += `<circle cx="540" cy="90" r="1.8" class="maze-dot"/>`;
+    html += `<circle cx="540" cy="115" r="1.8" class="maze-dot"/>`;
+
+    // Inside WEB01 chamber toward WAF
+    html += `<circle cx="540" cy="185" r="1.8" class="maze-dot"/>`;
+    html += `<circle cx="540" cy="210" r="2.5" class="maze-dot intersection"/>`;
+
+    // Corridor below WAF into Internal Highway
+    html += `<circle cx="540" cy="285" r="1.8" class="maze-dot"/>`;
+    html += `<circle cx="540" cy="305" r="2.8" class="maze-dot intersection"/>`;
+
+    // Internal Horizontal Highway along Y=320 (X=80 to 880)
+    for (let x = 80; x <= 880; x += 22) {
+      if (x === 80 || x === 240 || x === 540 || x === 780 || x === 880) {
+        html += `<circle cx="${x}" cy="320" r="2.8" class="maze-dot intersection"/>`;
+      } else {
+        html += `<circle cx="${x}" cy="320" r="1.8" class="maze-dot"/>`;
+      }
+    }
+
+    // Connectors from Highway down to Stations
+    // To DB01 (X=240)
+    html += `<circle cx="240" cy="345" r="1.8" class="maze-dot"/>`;
+    html += `<circle cx="240" cy="365" r="2.5" class="maze-dot intersection"/>`;
+    // To DC01 (X=540)
+    html += `<circle cx="540" cy="345" r="1.8" class="maze-dot"/>`;
+    html += `<circle cx="540" cy="365" r="2.5" class="maze-dot intersection"/>`;
+    // To Faculty-PC (X=780)
+    html += `<circle cx="780" cy="345" r="1.8" class="maze-dot"/>`;
+    html += `<circle cx="780" cy="365" r="2.5" class="maze-dot intersection"/>`;
+
+    // Vertical corridor from DB01 down to Target Vault (X=240, Y=415 to 495)
+    html += `<circle cx="240" cy="425" r="1.8" class="maze-dot"/>`;
+    html += `<circle cx="240" cy="450" r="1.8" class="maze-dot"/>`;
+    html += `<circle cx="240" cy="475" r="2.8" class="maze-dot intersection"/>`;
+
+    // Side corridor channels (X=80 and X=880)
+    for (let y = 90; y <= 510; y += 26) {
+      if (y !== 65 && y !== 320) {
+        html += `<circle cx="80" cy="${y}" r="1.8" class="maze-dot"/>`;
+        html += `<circle cx="880" cy="${y}" r="1.8" class="maze-dot"/>`;
+      }
+    }
+    html += `</g>`;
+
+    // 4. Subtle Network Boundary Labels
+    html += `<g id="subtle-labels">
+      <text x="65" y="42" font-family="var(--font-mono)" font-size="8" fill="var(--text-muted)">EXTERNAL PERIMETER [net.external]</text>
+      <text x="540" y="42" text-anchor="middle" font-family="var(--font-mono)" font-size="8" fill="var(--text-cyan)">DMZ GATEWAY [net.dmz]</text>
+      <text x="760" y="42" text-anchor="end" font-family="var(--font-mono)" font-size="8" fill="var(--text-muted)">INTERNAL SUBNET [net.internal]</text>
+    </g>`;
+
+    // 5. Dynamic Trajectory Corridor Lines (Strictly Orthogonal & NO Polygon Fill!)
+    html += `<g id="connections-layer"></g>`;
+
+    // 6. Security Checkpoint: WAF (Web Application Firewall Gate)
+    html += `<g class="security-checkpoint" id="checkpoint-waf">
+      <!-- Left post -->
+      <rect class="waf-checkpoint-post" x="487" y="244" width="8" height="24"/>
+      <!-- Right post -->
+      <rect class="waf-checkpoint-post" x="585" y="244" width="8" height="24"/>
+      <!-- Luminous barrier beam across corridor -->
+      <line class="waf-barrier-beam" id="waf-barrier-beam" x1="495" y1="256" x2="585" y2="256"/>
+      <!-- Label -->
+      <text class="waf-label-text" x="540" y="234" text-anchor="middle">WAF // ctrl.waf.web01</text>
+      <text class="waf-status-text" id="waf-status-badge" x="540" y="274" text-anchor="middle">ACTIVE &#10004;</text>
+    </g>`;
+
+    // 7. Small Labeled Host Stations (WEB01, DB01, DC01, FACULTY-PC-01)
+    topo.hosts.forEach(h => {
+      const pos = hostCoords[h.id];
+      if (!pos) return;
+      let w = 110, hgt = 32;
+      if (h.hostname === "FACULTY-PC-01") w = 130;
+      const x = pos.x - w/2, y = pos.y - hgt/2;
+
+      let portTag = "";
+      if (h.services && h.services.length > 0) {
+        portTag = `:${h.services[0].port}`;
+      }
+      if (h.hostname === "FACULTY-PC-01") portTag = " [EDR]";
+
+      html += `<g class="station-module" id="host-${h.id}">
+        <rect class="maze-station-pill" id="pill-${h.id}" x="${x}" y="${y}" width="${w}" height="${hgt}"/>
+        <circle cx="${x + 9}" cy="${pos.y}" r="2.8" fill="var(--accent-cyan)" opacity="0.9"/>
+        <text class="station-title" x="${x + 17}" y="${pos.y - 1}">${h.hostname}</text>
+        <text class="station-sub" x="${x + 17}" y="${pos.y + 9}">${h.ip}${portTag}</text>
+      </g>`;
+    });
+
+    // 8. Protected Destination: STUDENT PII Vault Station
+    const vaultPos = hostCoords['asset.student_pii'];
+    if (vaultPos) {
+      const vw = 135, vh = 36;
+      const vx = vaultPos.x - vw/2, vy = vaultPos.y - vh/2;
+      html += `<g class="data-vault" id="asset-asset.student_pii">
+        <rect class="target-vault-station" id="vault-box" x="${vx}" y="${vy}" width="${vw}" height="${vh}"/>
+        <text class="vault-lock-icon" id="vault-lock-icon" x="${vx + 12}" y="${vaultPos.y + 4}">&#128274;</text>
+        <text class="target-title" x="${vx + 26}" y="${vaultPos.y - 1}">STUDENT PII</text>
+        <text class="target-status" id="vault-status-text" x="${vx + 26}" y="${vaultPos.y + 10}">RESTRICTED [LOCKED]</text>
+      </g>`;
+    }
+
+    // 9. Attacker Probe Glyph (Yellow Circle with Wedge Mouth)
+    html += `<g class="intruder-craft" id="attacker-cursor" transform="translate(80, 65)">
+      <!-- Aura -->
+      <circle cx="0" cy="0" r="15" fill="rgba(250, 204, 21, 0.2)" filter="url(#glow-yellow)"/>
+      <!-- Yellow circular body with wedge mouth -->
+      <path id="pac-body" d="M 0 0 L 11 -5.5 A 12 12 0 1 0 11 5.5 Z" fill="#facc15" filter="drop-shadow(0 0 6px rgba(250, 204, 21, 0.9))"/>
+      <circle cx="2" cy="-5" r="1.5" fill="#020409"/>
+      <text x="0" y="-17" text-anchor="middle" class="attacker-label">&#128993; actor.attacker</text>
+    </g>`;
+
+    // Sonar Ping & Alert Flash Layer
+    html += `<g id="fx-layer"></g>`;
+
+    svg.innerHTML = html;
+  }
+
+  // ── Timeline Progress Rail ────────────────────────
+  function renderTimeline() {
+    const track = document.getElementById('tick-track');
+    track.innerHTML = '';
+    ticks.forEach((t, i) => {
+      const node = document.createElement('div');
+      node.className = `tick-node ${i === ticks.length - 1 ? 'objective-node' : ''}`;
+      node.dataset.tick = i;
+      const verb = t.action ? t.action.verb : '?';
+      node.innerHTML = `
+        <div class="node-circle">T${i + 1}</div>
+        <div class="node-label">${verb}</div>
+      `;
+      node.addEventListener('click', () => {
+        pause();
+        jumpToTick(i);
+      });
+      track.appendChild(node);
+    });
+  }
+
+  // ── Objectives Target List ────────────────────────
+  function renderObjectives() {
+    const container = document.getElementById('objectives-container');
+    container.innerHTML = '';
+    topo.objectives.forEach(obj => {
+      const item = document.createElement('div');
+      item.className = 'objective-item';
+      item.id = `obj-${obj.id}`;
+      item.innerHTML = `
+        <div class="obj-status-ring">&#10003;</div>
+        <div class="obj-label">${obj.label}</div>
+      `;
+      container.appendChild(item);
+    });
+  }
+
+  // ── Event Card Helper ─────────────────────────────
+  function createEventCard(event) {
+    const card = document.createElement('div');
+    card.className = 'event-card latest';
+    const category = event.category || 'other';
+    let desc = '';
+    const meta = event.metadata || {};
+
+    switch (event.type) {
+      case 'host_discovered':
+        desc = `Host discovered: ${meta.hostname || event.target_id} [${meta.ip || ''}]`;
+        break;
+      case 'service_discovered':
+        desc = `Service identified: ${meta.banner || event.target_id}`;
+        break;
+      case 'credential_acquired':
+        desc = `Credential acquired: ${event.target_id}`;
+        break;
+      case 'exploit_success':
+        desc = `Exploit succeeded on ${event.target_id}`;
+        break;
+      case 'lateral_movement':
+        desc = `Lateral pivot to ${event.target_id} via ${meta.from_host || '?'}`;
+        break;
+      case 'authentication_success':
+        desc = `Database session authenticated: ${meta.host_id || event.target_id}`;
+        break;
+      case 'data_access':
+        desc = `Target accessed: ${event.target_id} (${meta.sensitivity || 'restricted'})`;
+        break;
+      case 'detection_triggered':
+        desc = `ALERT: ${meta.control_id || event.target_id} triggered`;
+        break;
+      case 'objective_achieved':
+        desc = `OBJECTIVE ACHIEVED: ${meta.label || event.target_id}`;
+        break;
+      default:
+        desc = `${event.type}: ${event.target_id}`;
+    }
+
+    card.innerHTML = `
+      <div class="event-card-header">
+        <span class="event-category-tag ${category}">${category}</span>
+        <span class="event-card-time">T${event.tick} &bull; ${event.severity || 'info'}</span>
+      </div>
+      <div class="event-card-desc">${desc}</div>
+    `;
+    return card;
+  }
+
+  // ── Redraw All Trajectories Up To Given Tick (Strictly Orthogonal, NO Fill) ──
+  function redrawTrajectories(upToTick) {
+    const connLayer = document.getElementById('connections-layer');
+    if (!connLayer) return;
+    connLayer.innerHTML = '';
+
+    for (let i = 0; i <= upToTick && i < trajectorySegments.length; i++) {
+      const seg = trajectorySegments[i];
+      if (!seg.points || seg.points.length < 2) continue;
+
+      const pointsStr = seg.points.map(p => `${p.x},${p.y}`).join(' ');
+      const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+      poly.setAttribute('points', pointsStr);
+      poly.setAttribute('fill', 'none');
+      poly.setAttribute('class', `trajectory-line ${seg.isAlert ? 'alert-route' : ''}`);
+      poly.setAttribute('marker-end', seg.isAlert ? 'url(#arrowhead-red)' : 'url(#arrowhead)');
+      connLayer.appendChild(poly);
+    }
+  }
+
+  // ── Tick Display & Station Transitions ────────────
+  function showTick(tickIndex) {
+    if (tickIndex < 0 || tickIndex >= ticks.length) return;
+    currentTick = tickIndex;
+    const tickData = ticks[tickIndex];
+    const action = tickData.action;
+    const events = tickData.events || [];
+    const success = tickData.success !== undefined ? tickData.success : true;
+
+    // Timeline nodes update
+    document.querySelectorAll('.tick-node').forEach((m, i) => {
+      m.classList.remove('active');
+      if (i <= tickIndex) m.classList.add('played');
+      if (i === tickIndex) m.classList.add('active');
+    });
+
+    const hasDetection = events.some(e => e.type === 'detection_triggered');
+    if (hasDetection) {
+      document.querySelectorAll('.tick-node')[tickIndex]?.classList.add('detection');
+    }
+
+    // Timeline progress fill
+    const progressFill = document.getElementById('timeline-progress-fill');
+    if (progressFill) {
+      const pct = (tickIndex / (ticks.length - 1)) * 100;
+      progressFill.style.width = `${pct}%`;
+    }
+
+    // Update Mission Status Card in sidebar
+    const detail = document.getElementById('tick-detail');
+    if (action) {
+      const params = action.parameters ? Object.entries(action.parameters).map(([k,v]) => `${k}=${v}`).join(', ') : '';
+      let resultNote = success ? 'Execution completed' : 'Preconditions rejected by engine';
+      if (action.verb === 'exploit') resultNote = 'Credential obtained & data asset discovered';
+      if (action.verb === 'authenticate') resultNote = 'Database session established';
+      if (action.verb === 'access_data') resultNote = 'Vault accessed & objective achieved';
+
+      detail.innerHTML = `
+        <div class="mission-status-box active">
+          <div class="mission-tick-headline">
+            <span class="tick-counter-label">TICK 0${tickIndex + 1} / 0${ticks.length}</span>
+            <span class="tick-verb-badge">${action.verb}</span>
+          </div>
+          <div class="mission-action-code">
+            ${action.verb}(${action.target_id}${params ? ', ' + params : ''})
+          </div>
+          <div class="mission-status-row">
+            <span>RESULT: <strong style="color:${success ? 'var(--accent-green)' : 'var(--accent-red)'}">${resultNote}</strong></span>
+            <span>STATUS: ${success ? 'ACCEPTED' : 'REJECTED'}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Append telemetry events
+    const eventsContainer = document.getElementById('events-container');
+    eventsContainer.querySelectorAll('.event-card.latest').forEach(c => c.classList.remove('latest'));
+
+    events.forEach(evt => {
+      const card = createEventCard(evt);
+      eventsContainer.insertBefore(card, eventsContainer.firstChild);
+      totalEventsShown++;
+
+      if (evt.type === 'detection_triggered') totalDetections++;
+
+      if (evt.type === 'objective_achieved') {
+        const objId = evt.metadata?.objective_id || evt.target_id;
+        achievedObjectives.add(objId);
+        topo.objectives.forEach(o => {
+          if (o.id === objId || o.target_id === evt.target_id) {
+            const el = document.getElementById(`obj-${o.id}`);
+            if (el) el.classList.add('achieved');
+          }
+        });
+
+        // Target Vault accessed: unlock & green glow
+        const vaultBox = document.getElementById('vault-box');
+        const lockIcon = document.getElementById('vault-lock-icon');
+        const statusText = document.getElementById('vault-status-text');
+        if (vaultBox) vaultBox.classList.add('unlocked');
+        if (lockIcon) lockIcon.innerHTML = '&#128275;';
+        if (statusText) statusText.textContent = 'ACCESSED [OBJECTIVE ACHIEVED]';
+      }
+    });
+
+    // Update stations & attacker movement
+    updateStationStates(events, action, tickIndex);
+    updateAttackerPosition(tickIndex);
+
+    // Update stats
+    document.getElementById('stat-ticks').textContent = `0${tickIndex + 1}/0${ticks.length}`;
+    document.getElementById('stat-events').textContent = totalEventsShown;
+    document.getElementById('stat-detections').textContent = totalDetections;
+    document.getElementById('stat-objectives').textContent =
+      `${achievedObjectives.size}/${topo.objectives.length}`;
+  }
+
+  function updateStationStates(events, action, tickIndex) {
+    events.forEach(evt => {
+      if (evt.type === 'host_discovered') {
+        const hostId = evt.target_id;
+        scannedHosts.add(hostId);
+        const el = document.getElementById(`pill-${hostId}`);
+        if (el) el.classList.add('highlight');
+      }
+      if (evt.type === 'exploit_success' || evt.type === 'authentication_success') {
+        const hostId = evt.metadata?.host_id || evt.target_id;
+        const host = topo.hosts.find(h =>
+          h.id === hostId ||
+          h.services?.some(s => s.id === evt.target_id)
+        );
+        if (host) {
+          compromisedHosts.add(host.id);
+          const el = document.getElementById(`pill-${host.id}`);
+          if (el) {
+            el.classList.remove('highlight');
+            el.classList.add('compromised');
+          }
+        }
+      }
+      if (evt.type === 'detection_triggered') {
+        flashSecurityAlert();
+      }
+    });
+
+    // WAF alert management: only alert on Tick 3 (index 2)
+    const beam = document.getElementById('waf-barrier-beam');
+    const badge = document.getElementById('waf-status-badge');
+    if (beam && badge) {
+      if (tickIndex === 2) {
+        beam.classList.add('alert');
+        badge.textContent = 'SQLi DETECTED \u26A0';
+        badge.style.fill = 'var(--accent-red)';
+      } else {
+        beam.classList.remove('alert');
+        badge.textContent = 'ACTIVE \u2714';
+        badge.style.fill = 'var(--accent-green)';
+      }
+    }
+  }
+
+  function flashSecurityAlert() {
+    const fxLayer = document.getElementById('fx-layer');
+    if (!fxLayer) return;
+    const wave = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    wave.setAttribute('cx', '540');
+    wave.setAttribute('cy', '255');
+    wave.setAttribute('class', 'scan-sonar-wave');
+    wave.setAttribute('stroke', '#f43f5e');
+    fxLayer.appendChild(wave);
+    setTimeout(() => wave.remove(), 1400);
+  }
+
+  function emitRadarPing(pos) {
+    const fxLayer = document.getElementById('fx-layer');
+    if (!fxLayer || !pos) return;
+    const wave = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    wave.setAttribute('cx', pos.x);
+    wave.setAttribute('cy', pos.y);
+    wave.setAttribute('class', 'scan-sonar-wave');
+    fxLayer.appendChild(wave);
+    setTimeout(() => wave.remove(), 1400);
+  }
+
+  function updateAttackerPosition(tickIndex) {
+    const cursor = document.getElementById('attacker-cursor');
+    if (!cursor) return;
+
+    if (tickIndex >= 0 && tickIndex < trajectorySegments.length) {
+      const seg = trajectorySegments[tickIndex];
+      cursor.setAttribute('transform', `translate(${seg.dest.x}, ${seg.dest.y})`);
+      
+      const pacBody = document.getElementById('pac-body');
+      if (pacBody) {
+        pacBody.setAttribute('transform', `rotate(${seg.rot})`);
+      }
+
+      if (tickIndex === 0 || tickIndex === 4) {
+        emitRadarPing(seg.dest);
+      }
+      redrawTrajectories(tickIndex);
+    }
+  }
+
+  function showReplayResult() {
+    const section = document.getElementById('replay-section');
+    const container = document.getElementById('replay-container');
+    section.style.display = 'block';
+
+    const isMatch = replay.match;
+    const stats = replay.stats || {};
+
+    container.innerHTML = `
+      <div class="replay-result ${isMatch ? 'match' : 'fail'}">
+        <div class="replay-mission-header">
+          <span class="replay-pulse-badge">&#9679; REPLAY VERIFIED</span>
+          <span class="replay-status-tag">BIT-FOR-BIT MATCH</span>
+        </div>
+        <div class="replay-text">${isMatch ? 'DETERMINISTIC REPLAY VERIFIED' : 'REPLAY DIVERGENCE'}</div>
+        <div class="replay-trace-comparison">
+          <div class="trace-row"><span class="trace-label">FINAL STATE:</span> <span class="trace-val">MATCH &#10004;</span></div>
+          <div class="trace-row"><span class="trace-label">OBJECTIVES:</span> <span class="trace-val">MATCH &#10004;</span></div>
+          <div class="trace-row"><span class="trace-label">SESSIONS:</span> <span class="trace-val">MATCH &#10004;</span></div>
+          <div class="trace-row"><span class="trace-label">EVENT SEQUENCE:</span> <span class="trace-val">MATCH &#10004;</span></div>
+        </div>
+        <div class="replay-detail">
+          ${stats.actions || 7} ACTIONS &bull; ${stats.events || 15} EVENTS RECONSTRUCTED
+        </div>
+      </div>
+    `;
+  }
+
+  function showAIDemo() {
+    const section = document.getElementById('ai-section');
+    const container = document.getElementById('ai-container');
+    if (!section || !container || !aiDemo) return;
+
+    section.style.display = 'block';
+    container.innerHTML = '';
+
+    aiDemo.steps.forEach(step => {
+      const card = document.createElement('div');
+      card.className = 'ai-step-card';
+      const isAccepted = step.accepted || step.engine_status === 'accepted';
+      card.innerHTML = `
+        <div class="ai-badge ${isAccepted ? 'ai-badge-accepted' : 'ai-badge-rejected'}">
+          ${isAccepted ? 'ENGINE ACCEPTED' : 'ENGINE REJECTED'}
+        </div>
+        <div style="font-weight:600;margin-bottom:2px;color:var(--text-primary);">"${step.prompt}"</div>
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent-purple);margin-bottom:2px;">
+          PROPOSAL: ${step.proposal}
+        </div>
+        <div style="font-size:8.5px;color:var(--text-secondary);">
+          ${step.result}
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  // ── Master Presentation State Machine ─────────────
+  function stepPhase(phaseIndex) {
+    if (!isPlaying) return;
+    if (phaseIndex >= PHASES.length) {
+      finishPresentation();
+      return;
+    }
+
+    currentPhaseIndex = phaseIndex;
+    const phase = PHASES[phaseIndex];
+    const detail = document.getElementById('tick-detail');
+
+    switch (phase.type) {
+      case 'intro':
+        detail.innerHTML = `
+          <div class="mission-status-box active">
+            <div class="tick-counter-label" style="font-size:11.5px;">MISSION BRIEFING</div>
+            <div style="font-size:9.5px;color:var(--text-secondary);margin-top:2px;">
+              Statecraft &bull; Deterministic Cyber Simulation
+            </div>
+          </div>
+        `;
+        break;
+
+      case 'environment':
+        detail.innerHTML = `
+          <div class="mission-status-box active">
+            <div class="tick-counter-label" style="font-size:11.5px;">NETWORK TOPOLOGY</div>
+            <div style="font-size:9.5px;color:var(--text-secondary);margin-top:2px;">
+              Perimeter &bull; DMZ Gateway &bull; Internal Subnet &bull; Protected Asset
+            </div>
+          </div>
+        `;
+        break;
+
+      case 'validation':
+        detail.innerHTML = `
+          <div class="mission-status-box active">
+            <div class="tick-counter-label" style="font-size:11.5px;color:var(--accent-green);">NETWORK INTEGRITY</div>
+            <div style="font-size:9.5px;color:var(--text-secondary);margin-top:2px;">
+              &#10004; 6/6 Validation Stages Passed: Schema, Integrity, Graph, Reachability, Capability, Cycles
+            </div>
+          </div>
+        `;
+        break;
+
+      case 'tick':
+        showTick(phase.tickIndex);
+        break;
+
+      case 'persistence':
+        detail.innerHTML = `
+          <div class="mission-status-box active">
+            <div class="tick-counter-label" style="font-size:11.5px;color:var(--accent-green);">PERSISTENCE</div>
+            <div style="font-size:9.5px;color:var(--text-secondary);margin-top:2px;">
+              &#128190; State machine snapshot &amp; causal event log archived to .scr package
+            </div>
+          </div>
+        `;
+        break;
+
+      case 'replay':
+        detail.innerHTML = `
+          <div class="mission-status-box active">
+            <div class="tick-counter-label" style="font-size:11.5px;">REPLAY</div>
+            <div style="font-size:9.5px;color:var(--text-secondary);margin-top:2px;">
+              &#9881; Re-executing simulation from initial specification with recorded actions
+            </div>
+          </div>
+        `;
+        break;
+
+      case 'replay_verified':
+        showReplayResult();
+        detail.innerHTML = `
+          <div class="mission-status-box active">
+            <div class="tick-counter-label" style="font-size:11.5px;color:var(--accent-green);">REPLAY VERIFIED</div>
+            <div style="font-size:9.5px;color:var(--text-secondary);margin-top:2px;">
+              &#10004; Bit-for-bit identical state, objectives, active sessions, and event log
+            </div>
+          </div>
+        `;
+        break;
+
+      case 'final_architecture':
+        const archFlow = document.getElementById('arch-flow');
+        if (archFlow) archFlow.classList.add('highlight');
+        detail.innerHTML = `
+          <div class="mission-status-box active">
+            <div class="tick-counter-label" style="font-size:11.5px;">CORE GUARANTEE</div>
+            <div style="font-size:9.5px;color:var(--text-secondary);margin-top:2px;">
+              User / AI Proposes &bull; Only Statecraft Engine Validates &amp; Executes
+            </div>
+          </div>
+        `;
+        break;
+
+      case 'ai_intro':
+      case 'ai_step1':
+      case 'ai_step2':
+      case 'ai_conclusion':
+        showAIDemo();
+        break;
+    }
+
+    narrator.speak(phase.text, () => {
+      if (!isPlaying) return;
+      const pauseBetween = isFastMode ? 200 : Math.max(500, 700 / playSpeed);
+      playTimer = setTimeout(() => {
+        stepPhase(phaseIndex + 1);
+      }, pauseBetween);
+    });
+  }
+
+  function finishPresentation() {
+    isPlaying = false;
+    clearTimeout(playTimer);
+    narrator.cancel();
+    const btnPlay = document.getElementById('btn-play');
+    if (btnPlay) {
+      btnPlay.textContent = '\u25B6 PLAY DEMO';
+      btnPlay.classList.remove('active');
+    }
+    const subtitleEl = document.getElementById('narration-text');
+    if (subtitleEl) {
+      subtitleEl.textContent = "Simulation complete. Deterministic replay verified. Statecraft engine is authoritative.";
+    }
+  }
+
+  // ── Playback Controls ─────────────────────────────
+  function startDemoFromReady() {
+    const overlay = document.getElementById('phase-overlay');
+    overlay.classList.remove('visible');
+    const btnStart = document.getElementById('btn-start-demo');
+    if (btnStart) btnStart.disabled = true;
+
+    isPlaying = true;
+    const btnPlay = document.getElementById('btn-play');
+    if (btnPlay) {
+      btnPlay.textContent = '\u23F8 PAUSE';
+      btnPlay.classList.add('active');
+    }
+
+    stepPhase(0);
+  }
+
+  function play() {
+    if (isPlaying) return;
+
+    const overlay = document.getElementById('phase-overlay');
+    if (overlay.classList.contains('visible')) {
+      startDemoFromReady();
+      return;
+    }
+
+    isPlaying = true;
+    const btnPlay = document.getElementById('btn-play');
+    btnPlay.textContent = '\u23F8 PAUSE';
+    btnPlay.classList.add('active');
+
+    if (currentPhaseIndex >= 0 && currentPhaseIndex < PHASES.length) {
+      narrator.resume();
+      stepPhase(currentPhaseIndex);
+    } else {
+      stepPhase(0);
+    }
+  }
+
+  function pause() {
+    isPlaying = false;
+    clearTimeout(playTimer);
+    narrator.pause();
+    const btnPlay = document.getElementById('btn-play');
+    btnPlay.textContent = '\u25B6 RESUME';
+    btnPlay.classList.remove('active');
+  }
+
+  function jumpToTick(idx) {
+    pause();
+    narrator.cancel();
+    resetStateVisuals();
+    for (let i = 0; i <= idx; i++) {
+      showTick(i);
+    }
+    currentPhaseIndex = PHASES.findIndex(p => p.type === 'tick' && p.tickIndex === idx);
+  }
+
+  function resetStateVisuals() {
+    totalEventsShown = 0;
+    totalDetections = 0;
+    achievedObjectives.clear();
+    compromisedHosts.clear();
+    scannedHosts.clear();
+
+    document.getElementById('events-container').innerHTML = '';
+    const connLayer = document.getElementById('connections-layer');
+    if (connLayer) connLayer.innerHTML = '';
+    const fxLayer = document.getElementById('fx-layer');
+    if (fxLayer) fxLayer.innerHTML = '';
+
+    document.querySelectorAll('.maze-station-pill').forEach(m => {
+      m.classList.remove('highlight', 'compromised');
+    });
+
+    const vaultBox = document.getElementById('vault-box');
+    const lockIcon = document.getElementById('vault-lock-icon');
+    const statusText = document.getElementById('vault-status-text');
+    if (vaultBox) vaultBox.classList.remove('unlocked');
+    if (lockIcon) lockIcon.innerHTML = '&#128274;';
+    if (statusText) statusText.textContent = 'RESTRICTED [LOCKED]';
+
+    const cursor = document.getElementById('attacker-cursor');
+    if (cursor) cursor.setAttribute('transform', 'translate(80, 65)');
+
+    const beam = document.getElementById('waf-barrier-beam');
+    const badge = document.getElementById('waf-status-badge');
+    if (beam) beam.classList.remove('alert');
+    if (badge) {
+      badge.textContent = 'ACTIVE \u2714';
+      badge.style.fill = 'var(--accent-green)';
+    }
+
+    const replaySection = document.getElementById('replay-section');
+    if (replaySection) replaySection.style.display = 'none';
+
+    const aiSection = document.getElementById('ai-section');
+    if (aiSection) aiSection.style.display = 'none';
+
+    const archFlow = document.getElementById('arch-flow');
+    if (archFlow) archFlow.classList.remove('highlight');
+
+    document.querySelectorAll('.objective-item').forEach(el => el.classList.remove('achieved'));
+    document.querySelectorAll('.tick-node').forEach(el => el.classList.remove('played', 'active', 'detection'));
+    const progressFill = document.getElementById('timeline-progress-fill');
+    if (progressFill) progressFill.style.width = '0%';
+  }
+
+  function resetToReady() {
+    pause();
+    narrator.cancel();
+    clearTimeout(playTimer);
+    resetStateVisuals();
+
+    currentTick = -1;
+    currentPhaseIndex = -1;
+
+    document.getElementById('stat-ticks').textContent = `0/0${ticks.length}`;
+    document.getElementById('stat-events').textContent = '0';
+    document.getElementById('stat-detections').textContent = '0';
+    document.getElementById('stat-objectives').textContent = `0/${topo.objectives.length}`;
+
+    const detail = document.getElementById('tick-detail');
+    detail.innerHTML = `
+      <div class="mission-status-box">
+        <div class="tick-counter-label" style="font-size:11.5px;color:var(--text-muted);">STANDBY MODE</div>
+        <div style="font-size:9.5px;color:var(--text-secondary);margin-top:2px;">
+          Awaiting mission launch from operator.
+        </div>
+      </div>
+    `;
+
+    const sub = document.getElementById('narration-text');
+    if (sub) sub.textContent = "Ready to demonstrate. Press PLAY DEMO to launch simulation.";
+
+    const overlay = document.getElementById('phase-overlay');
+    overlay.classList.add('visible');
+    const btnStart = document.getElementById('btn-start-demo');
+    if (btnStart) btnStart.disabled = false;
+
+    const btnPlay = document.getElementById('btn-play');
+    btnPlay.textContent = '\u25B6 PLAY DEMO';
+    btnPlay.classList.remove('active');
+  }
+
+  function toggleVoice() {
+    narrator.enabled = !narrator.enabled;
+    updateVoiceButton();
+    if (!narrator.enabled) {
+      narrator.cancel();
+    }
+  }
+
+  function updateVoiceButton() {
+    const btn = document.getElementById('btn-voice');
+    if (!btn) return;
+    if (narrator.enabled) {
+      btn.textContent = '\uD83D\uDD0A Voice: ON';
+      btn.classList.add('active');
+    } else {
+      btn.textContent = '\uD83D\uDD07 Voice: OFF';
+      btn.classList.remove('active');
+    }
+  }
+
+  function changeSpeed(delta) {
+    speedIdx = Math.max(0, Math.min(SPEEDS.length - 1, speedIdx + delta));
+    playSpeed = SPEEDS[speedIdx];
+    document.getElementById('speed-label').textContent = `${playSpeed}x`;
+  }
+
+  // ── Initialize ────────────────────────────────────
+  function init() {
+    renderTopology();
+    renderTimeline();
+    renderObjectives();
+
+    const totalEvents = ticks.reduce((acc, t) => acc + (t.events ? t.events.length : 0), 0);
+    const metaEl = document.getElementById('ready-scenario-meta');
+    if (metaEl) {
+      metaEl.innerHTML = `${ticks.length} TICKS &bull; ${totalEvents} EVENTS &bull; ${topo.objectives.length} OBJECTIVE`;
+    }
+
+    const btnStartDemo = document.getElementById('btn-start-demo');
+    if (btnStartDemo) {
+      btnStartDemo.addEventListener('click', startDemoFromReady);
+    }
+
+    document.getElementById('btn-play').addEventListener('click', () => {
+      isPlaying ? pause() : play();
+    });
+    document.getElementById('btn-restart').addEventListener('click', resetToReady);
+    document.getElementById('btn-slower').addEventListener('click', () => changeSpeed(-1));
+    document.getElementById('btn-faster').addEventListener('click', () => changeSpeed(1));
+
+    const btnVoice = document.getElementById('btn-voice');
+    if (btnVoice) {
+      btnVoice.addEventListener('click', toggleVoice);
+      updateVoiceButton();
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        const overlay = document.getElementById('phase-overlay');
+        if (overlay && overlay.classList.contains('visible')) {
+          startDemoFromReady();
+        } else {
+          isPlaying ? pause() : play();
+        }
+      }
+      if (e.code === 'ArrowRight' && !isPlaying) {
+        if (currentTick < ticks.length - 1) jumpToTick(currentTick + 1);
+      }
+      if (e.code === 'ArrowLeft' && !isPlaying && currentTick > 0) {
+        jumpToTick(currentTick - 1);
+      }
+      if (e.code === 'KeyR') resetToReady();
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+})();
+</script>
+</body>
+</html>

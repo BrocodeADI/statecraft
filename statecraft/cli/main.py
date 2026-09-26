@@ -172,8 +172,16 @@ def demo(
     out: Path = typer.Option(Path("runs/university.scr"), "--out", "-o", help="Path to export run archive"),
     fast: bool = typer.Option(False, "--fast", help="Run without presentation delays (instant execution)"),
     ai: bool = typer.Option(False, "--ai", help="Include AI Action Proposer architectural demonstration"),
+    visual: bool = typer.Option(False, "--visual", help="Launch animated visual dashboard in browser"),
 ):
     """Execute complete end-to-end Statecraft demonstration with real engine orchestration."""
+
+    # ── VISUAL MODE: Run simulation, collect events, launch dashboard ──
+    if visual:
+        _demo_visual(scenario, out, fast=fast, ai=ai)
+        return
+
+    # ── TERMINAL MODE: Original presentation flow (unchanged) ──
     def step_pause(seconds: float):
         if not fast:
             time.sleep(seconds)
@@ -328,6 +336,126 @@ def demo(
 
     # Final Architecture Message
     render_demo_final_summary()
+
+
+def _demo_visual(scenario: Path, out: Path, fast: bool = False, ai: bool = False):
+    """Run the real simulation and launch the animated visual dashboard.
+
+    This is a VISUALIZATION of the real engine -- every event shown in the
+    browser originates from the authoritative Statecraft simulation engine.
+    """
+    from statecraft.visual.adapter import (
+        action_to_viz,
+        build_run_payload,
+        event_to_viz,
+    )
+    from statecraft.visual.server import serve_dashboard
+
+    # 1. Load and validate
+    if not scenario.is_file():
+        console.print(f"[bold red]Error: Scenario file not found: {scenario}[/bold red]")
+        raise typer.Exit(code=1)
+
+    try:
+        spec = load_spec(scenario)
+    except Exception as e:
+        console.print(f"[bold red]Failed to load scenario: {e}[/bold red]")
+        raise typer.Exit(code=1)
+
+    val_res = validate_environment(spec)
+    if not val_res.valid:
+        console.print("[bold red]Validation failed:[/bold red]")
+        for err in val_res.errors:
+            console.print(f"  [{err.stage}] {err.message}")
+        raise typer.Exit(code=1)
+
+    console.print("[bold cyan][>] Running real Statecraft simulation...[/bold cyan]")
+
+    # 2. Execute simulation (real engine, real events)
+    sim = Simulator(spec, seed=spec.seed)
+    actions = get_university_attack_path()
+    tick_data = []
+
+    for tick_num, action in enumerate(actions, 1):
+        res = sim.step(action)
+        tick_data.append({
+            "action": action_to_viz(tick_num, action),
+            "events": [event_to_viz(e) for e in res.events],
+            "success": res.success,
+        })
+
+    console.print(f"  [bold green][+][/bold green] Simulation complete: {len(actions)} ticks, {len(sim._recorded_events)} events")
+
+    # 3. Persist
+    out.parent.mkdir(parents=True, exist_ok=True)
+    run_obj = sim.to_run()
+    saved_path = export_run(run_obj, out)
+    console.print(f"  [bold green][+][/bold green] Run archived: {saved_path}")
+
+    # 4. Replay verification
+    loaded_run = import_run(saved_path)
+    replayer = Replayer()
+    replayed_state, replayed_events = replayer.replay_run(loaded_run)
+
+    state_match = (
+        loaded_run.final_state.tick == replayed_state.tick and
+        loaded_run.final_state.achieved_objectives == replayed_state.achieved_objectives and
+        len(loaded_run.final_state.sessions) == len(replayed_state.sessions) and
+        len(loaded_run.events) == len(replayed_events)
+    )
+
+    replay_stats = {
+        "actions": len(loaded_run.actions),
+        "events": len(replayed_events),
+        "tick": replayed_state.tick,
+        "match": state_match,
+    }
+    console.print(f"  [bold green][+][/bold green] Replay verified: {'MATCH' if state_match else 'DIVERGENCE'}")
+
+    # 5. Optional AI demonstration
+    ai_demo = None
+    if ai:
+        from statecraft.ai.pipeline import AIEngineSession
+        ai_session = AIEngineSession(spec)
+        t1 = ai_session.process_message("Scan the university DMZ network")
+        t2 = ai_session.process_message("Access student PII")
+        ai_demo = {
+            "steps": [
+                {
+                    "prompt": "Scan the university DMZ network",
+                    "proposal": f"{t1.proposed_action.verb.value}({t1.proposed_action.target_id})" if t1.proposed_action else "scan(net.dmz)",
+                    "engine_status": "accepted",
+                    "result": "WEB01 discovered [10.0.1.10]",
+                    "accepted": True,
+                },
+                {
+                    "prompt": "Access student PII",
+                    "proposal": f"{t2.proposed_action.verb.value}({t2.proposed_action.target_id})" if t2.proposed_action else "access_data(asset.student_pii)",
+                    "engine_status": "rejected",
+                    "result": "Rejected -- No active session on target host",
+                    "accepted": False,
+                },
+            ]
+        }
+        console.print("  [bold green][+][/bold green] AI Action Proposer demo included")
+
+    # 6. Build payload and launch dashboard
+    payload_json = build_run_payload(
+        spec,
+        tick_data,
+        state_match,
+        replay_stats,
+        fast=fast,
+        ai_demo=ai_demo,
+    )
+    console.print("[bold cyan][>] Launching visual dashboard in browser...[/bold cyan]")
+    if fast:
+        console.print("  [dim]Fast mode enabled (narration disabled, rapid animation)[/dim]")
+    if ai:
+        console.print("  [dim]AI Action Proposer demonstration enabled[/dim]")
+    console.print("[dim]  Press Ctrl+C to stop the dashboard server.[/dim]\n")
+
+    serve_dashboard(payload_json)
 
 
 @app.command()

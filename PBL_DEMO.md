@@ -36,6 +36,110 @@ statecraft demo
 - `statecraft demo --fast` — Instant execution without pauses (ideal for automated evaluation and quick verification).
 - `statecraft demo --ai` — Appends the optional AI Action Proposer demonstration, verifying the engine authority boundary.
 - `statecraft demo --fast --ai` — Instant execution including the AI Action Proposer section.
+- `statecraft demo --visual` — Launches animated SVG dashboard in browser with play-button controlled start and optional voice narration.
+- `statecraft demo --visual --fast` — Fast visual mode with compressed animation intervals and voice automatically disabled.
+- `statecraft demo --visual --ai` — Visual dashboard including synchronized AI Action Proposer demonstration.
+
+---
+
+## C.2 Visual Demonstration Procedure: STATECRAFT — ORBITAL (`statecraft demo --visual`)
+
+Statecraft features an optional futuristic mission-control visualizer: **STATECRAFT — ORBITAL**.
+
+> **THEME DEFINITION & LEARNING METAPHOR:**
+> **Orbital is a visualization theme over the same deterministic Statecraft cybersecurity simulation engine.**
+>
+> The space-station concept is an educational and intuitive learning visualization designed to convey complex cybersecurity concepts (DMZ boundaries, lateral movement, pivoting, perimeter security controls, and privilege-gated data access) through a clear physical metaphor.
+>
+> **DISCLAIMER:**
+> The orbital station is a simulated reference environment and does not represent a real university or space infrastructure. No real network scanning, exploitation, or infrastructure is accessed.
+
+### Available Visual Commands:
+- `statecraft demo --visual` — Launches the full interactive mission-control dashboard with play-button gated start and voice narration.
+- `statecraft demo --visual --ai` — Appends synchronized visual demonstration of the AI Action Proposer authority boundary.
+- `statecraft demo --visual --fast` — Fast playback mode with compressed animation delays and voice narration disabled by default.
+
+### Conceptual Mapping & Technical Identifiers
+
+The visualization maps cyber infrastructure to orbital station modules while **strictly retaining the actual technical identifiers** in the user interface:
+
+| Orbital Metaphor | Technical Cybersecurity Term | Technical UI Identifier |
+| :--- | :--- | :--- |
+| **Open Space** | External Network | `net.external` |
+| **Intruder Craft / Probe** | Unauthorized Attacker | `actor_attacker` / Stylized SVG Craft |
+| **Docking / Comms Sector** | Demilitarized Zone (DMZ) | `net.dmz` |
+| **Communications Module** | DMZ Web Server | `WEB01` (`10.0.1.10`) |
+| **Station Application Terminal**| Web Application | `svc.web01.app` (Student Portal) |
+| **Web Security Checkpoint** | Web Application Firewall | `ctrl.waf.web01` (`WAF`) |
+| **Security Airlock / Gate** | Network Perimeter Boundary | DMZ-to-Internal Firewall Boundary |
+| **Restricted Station Core** | Internal Subnet | `net.internal` |
+| **Data Core** | Database Server | `DB01` (`10.0.10.20`) |
+| **Station Directory / Control** | Domain Controller | `DC01` (`10.0.10.10`) |
+| **Station Workstation** | Internal Client Host | `FACULTY-PC-01` (`10.0.10.50`) |
+| **Access Credential** | Stolen DB Credentials | `cred.db01.app_user` |
+| **Crossing into Restricted Core** | Lateral Movement Pivot | `pivot(net.internal, via=host.web01)` |
+| **Authorized Database Session** | PostgreSQL Connection Session | `svc.db01.postgres` |
+| **Secure Data Vault** | Protected Target Asset | `asset.student_pii` (`Student PII`) |
+| **Station Security Alert** | Telemetry Detection Alert | WAF Strobe Pulse (`evt-det-001`) |
+| **Mission Objective** | Cybersecurity Target | `obj.exfiltrate_pii` |
+| **Mission Replay** | Bit-for-bit Deterministic Replay | Complete run validation |
+
+### Visual Demonstration Flow:
+
+1. **Launch the Visual Demo:**
+   ```bash
+   statecraft demo --visual
+   ```
+2. **Browser Opens to MISSION READY Screen:**
+   The browser opens to a NASA mission-control ready screen and **does NOT auto-start**:
+   - **Title:** `STATECRAFT ORBITAL // CYBERSECURITY MISSION SIMULATION`
+   - **Subtitle:** `Deterministic Cyber Simulation Engine`
+   - **Reference Model:** `Simulated Orbital Research Station` (Reference: `env-univ-001`)
+   - **Scope:** `7 TICKS • 15 EVENTS • 1 OBJECTIVE`
+   - **Prompt:** `[ ▶ BEGIN MISSION ]`
+   - **Disclaimer:** `Synthetic reference environment. No real infrastructure is accessed.`
+3. **Press [ ▶ BEGIN MISSION ]:**
+   Clicking the button dismisses the ready overlay and launches the live simulation.
+4. **Physical Attack Trajectory (Ticks 1–7):**
+   - **Tick 1 (Docking Approach):** Intruder craft traverses from Open Space to the Docking Sector (`net.dmz`); `WEB01` is discovered.
+   - **Tick 2 (Module Enumeration):** Craft approaches `WEB01`; Student Portal terminal illuminates.
+   - **Tick 3 (Security Checkpoint Strobe):** Attacker executes SQL injection against the Student Portal. The station's `WAF` triggers a pulsing red security alert (`ctrl.waf.web01`), a database credential is extracted, and the data vault is pinpointed.
+   - **Tick 4 (Security Gate Pivot):** Attacker craft physically traverses the security gate between the docking bay and the restricted station core via compromised `WEB01`.
+   - **Tick 5 (Core Discovery):** Attacker craft scans the restricted core; `DB01`, `DC01`, and `FACULTY-PC-01` illuminate sequentially.
+   - **Tick 6 (Database Session):** Attacker establishes an authenticated session with PostgreSQL on `DB01`.
+   - **Tick 7 (Vault Unlock & Objective Achieved):** The Secure Data Vault dial unlocks (`🔒 RESTRICTED` -> `🔓 ACCESSED`) upon accessing `asset.student_pii`; scenario objective completed.
+5. **Mission Replay Verification:**
+   - Visual replay draws the original vs. replay trajectory lines.
+   - Engine verifies bit-for-bit match on ticks, state, objectives, sessions, and causality event stream (`DETERMINISTIC REPLAY VERIFIED`).
+6. **Final Architecture Screen:**
+   - Professional mission control diagram highlighting: `USER / AI PROPOSER` -> `STATECRAFT ENGINE` (Validate, Execute, Transition, Telemetry) -> `SIMULATION STATE` -> `MISSION REPLAY`.
+   - Prominently showcases: **ENGINE IS AUTHORITATIVE**.
+   - Screen persists for evaluation and instructor Q&A without auto-resetting.
+7. **Operator Controls:**
+   - **🔊 Voice: ON / 🔇 Voice: OFF:** Web Speech API voice narration toggle.
+   - **⏸ PAUSE / ▶ RESUME:** Freezes simulation playback and narration for live instructor explanations.
+   - **↺ RESET:** Cancels speech and returns to the initial READY screen with `[ ▶ BEGIN MISSION ]`.
+   - **Speed Controls:** Adjust playback rate (`0.5x`, `1x`, `2x`, `4x`).
+
+> **REAL ENGINE GUARANTEE & ARCHITECTURAL SEPARATION:**
+> The orbital visualization is strictly a presentation adapter over the real Statecraft engine:
+>
+> ```text
+> REAL STATECRAFT ENGINE
+>          |
+>          v
+>  Runtime Simulation
+>          |
+>          v
+>  Visualization Adapter
+>     /             \
+>    /               \
+> SVG Orbital      Voice Narration
+> Station UI      (Web Speech API)
+> ```
+>
+> Every host, connection, event, detection, and replay verification originates from the actual simulation engine. The visual layer never fakes or precomputes outcomes.
+
 
 ---
 
